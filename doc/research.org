@@ -27,10 +27,62 @@
     - upload to s3 failed
     - number of successes/errors after parsing a feed
 
+*** logs in krikkit
+#+begin_src
+(utils/log-event :job-scheduler/with-monitoring :job-result result)
+(utils/log-event :pipeline/run :completed :name name :pipeline-m result)
+(utils/log-event :pipeline/run :started :name name :pipeline-m m)
+(utils/log-event :pipeline/run :step-started :name name
+(utils/log-event :test-event-filtering :worked)
+(utils/log-info :catalog/job :message "Done computing new catalog")
+(utils/log-info :catalog/job :message "Starting to compute the new catalog")
+(utils/log-info :cogs/job :message "Cogs job completed.")
+(utils/log-info :cogs/job :message "Found a new sunrise feed. Starting the cogs job.")
+(utils/log-info :cogs/job :message "No new sunrise feed available.")
+(utils/log-info :cogs/new-feed-available? :message "Checking for a new sunrise feed")
+(utils/log-info :defensive/compute :done :catalog-file (catalog/catalog-file)
+(utils/log-info :defensive/compute :message "Starting to compute defensive cogs and price")
+(utils/log-info :edw/compute :finished-cogs-computation)
+(utils/log-info :edw/compute :start-cogs-computation-using-file-> (:parsed-file m)
+(utils/log-info :job-scheduler/schedule :scheduled-job job-name :frequency-in-ms millis)
+(utils/log-info :message "Created an edw cogs dump." :location file))
+(utils/log-info :message "Found a sku with a negetive min val. Changing it to 1 cent instead." :sku sku :key key)
+(utils/log-info :message "Please provide the right feed name." :given-feed-name (System/getProperty "feed-name"))
+(utils/log-info :message "Please provide the system property 'feed-name' that needs to be generated. The value needs to be a keyword. For ex: -Dfeed-name=:edw")
+(utils/log-info :message "Will dump edw cogs data from the database")
+(utils/log-info :mrkdm-sales/compute :computing-latest-cogs-min-max
+(utils/log-info :mrkdm-sales/compute result)
+(utils/log-info :oos-delta :message "No new delta feeds added after the last full feed.")
+(utils/log-info :oos-delta/job :message "Found a new delta feed now. Starting oos-delta job.")
+(utils/log-info :oos-delta/job :message "No new oos-delta feed available.")
+(utils/log-info :oos-delta/job :message "OOS delta job completed.")
+(utils/log-info :oos-delta/new-feed-available? :message "Checking for a Out of Stock delta feed")
+(utils/log-info :oos/job :message "Found a new oos full feed. Starting the oos-full job.")
+(utils/log-info :oos/job :message "No new oos-full feed.")
+(utils/log-info :oos/job :message "OOS full job completed.")
+(utils/log-info :oos/new-feed-available? :message "Checking for a new Out of Stock full feed")
+(utils/log-info :parsing.edw/parse :downloaded-file (:downloaded-file m)
+(utils/log-info :parsing.mrkdm-sales/parse :parsed parsed-file :file-name csv-file-name)
+(utils/log-info :parsing.mrkdm-sales/parse :parsing m)
+(utils/log-info :parsing.oos/parse :parsed parsed-file :file-name file-name)
+(utils/log-info :parsing.oos/parse :parsing m)
+(utils/log-info :parsing.pricedrop/parse :downloaded-file (:downloaded-file m)
+(utils/log-info :parsing.sunrise/parse :file (:downloaded-file m)
+(utils/log-info :pricedrop/job :message
+(utils/log-info :pricedrop/job :message "No new pricedrop feed available.")
+(utils/log-info :pricedrop/job :message "Pricedrop job completed.")
+(utils/log-info :pricedrop/new-feed-available? :message "Checking for a new pricedrop feed")
+(utils/log-info :server/start :server-started-on-port port))
+(utils/log-info :sku_instant_savings_price/download :remote-fqn remote-fqn
+(utils/log-info :sku_instant_savings_price/parse :csv-file csv-file)
+(utils/log-info :sunrise/compute :finished-cogs-computation)
+(utils/log-info :sunrise/compute :start-cogs-computation-using-file-> (:parsed-file m))
+#+end_src
+
 ** Day wise notes
 *** srihari-2016-02-04
 **** On using kafka as a messaging system between applications and Wonko
-***** Potential high level design
+***** Implied high level design
 #+begin_src
 +---------+                              Kafka consumer       +----------+
 | krikkit | +----------> +-------+         +-------+------>   |prometheus|
@@ -44,7 +96,7 @@
 
 ***** Positives
 - Kafka will give us the high throughput we need when applications
-  send their real time events.
+  send their real time events (~5k requests per second).
 - Producers (applications) will need to implement kafka producers
   for sending events/logs, and the interface will be simple.
 - We could even just send logs, and stream-process it using Storm
@@ -66,9 +118,90 @@
 - https://github.com/pingles/clj-kafka
 
 ***** Conclusions
-- Kafka feels like an overkill for the problem of high volume of
-  requests, and seems quite unnecessary when we have low volume
-  (krikkit, initial release).
-- If we want to couple log processing with monitoring (I'm not
-  advocating this), then it might be a good solution to keep logs
-  in one place, process them for debugging or other insights.
+- Kafka would be a good message buffer to solve the problem of high
+  volume of requests, but from the features it provides, it feels like
+  we'll be under-utilizing it, which hints at a different solution.
+- For the low volume release (krikkit), it seems quite
+  unnecessary. However, the interface for applications might change
+  once we plug in kafka, so we should consider using it from the get
+  go.
+- If we are serious about log monitoring then it might be a good
+  solution to keep logs in one place (kafka), process them (using
+  Storm or Flume) for debugging or other insights besides monitoring.
+
+**** Should we use prometheus or another monitoring solution, or build it inside wonko?
+- Wonko would be the interface for applications, so the initial choice shouldn't matter much.
+    - We should however pick an existing solution before debating
+      writing something within wonko, so that Wonko can be used.
+- For the first release at least, I think we should Prometheus.
+    - We have used prometheus/grafana for a while now to monitor node level metrics, and it works.
+    - We have already built integration with prometheus for 3 projects (HK, EP, Hatter).
+**** Wonko API
+- This is regarding the shape of requests/api calls that services like
+  krikkit and EP will make to wonko. I see the following alternatives
+  (ordered by priority).
+
+  1. Metrics
+  2. Logs with schema
+  2. Logs without schema
+
+***** Metrics
+For example, krikkit/EP would have the following along with the log lines:
+#+begin_src
+;; metric-type metric-name map-of-labels-and-values options
+
+(monitor :counter :cogs-job-completed)
+(monitor :counter :no-new-surise-feed-found {:alert true})
+(monitor :gauge :cogs-job-stats {:successes 107 :errors 3 :exec-time 42})
+(monitor :histogram :get-buckets {:status 200} 42)
+#+end_src
+
+Notes:
+- In wonko, we'd have to dynamically create these metrics to send to
+  prometheus, riemann, etc. If not dynamically, applications will have
+  to register these types with Wonko first, but this would involve
+  additional complexity in the service<=>wonko interaction.
+- Metric types are mandatory. This means that devs will have to
+  understand these metric types.
+- This is sort of what we were working towards with EP monitoring ([3]
+  and [4]).
+- These may or may not be tied directly with the logging, because it
+  involves chosing the metric type.
+- Injesting this data into wonko would be simple.
+
+Resources:
+  1 https://dropwizard.github.io/metrics/3.1.0/getting-started
+  2 https://prometheus.io/docs/concepts/metric_types/
+  3 https://github.com/StaplesLabs/Eccentrica/blob/master/src/eccentrica/utils/monitoring.clj
+  4 https://github.com/StaplesLabs/Eccentrica/blob/master/src/eccentrica/monitoring.clj
+
+***** Logs with schema
+For example, krikkit/EP would have the following log lines:
+#+begin_src
+;; log/log-level metric-name metric-info-map
+
+(log/info :cogs-job-completed)
+(log/error :no-new-surise-feed-found)
+(log/info :cogs-job-stats {:successes 107 :errors 3 :exec-time 42})
+(log/info :get-buckets {:status 200 :exec-time 42})
+#+end_src
+
+Notes:
+- Without the metric type, we can't dynamically find out how to monitor a metric.
+- We could alert based on a configured log-level
+- Alternatively, we could code the transformation of these metrics
+  inside wonko, which would be very similar to the "without schema"
+  solution in disadvantages.
+
+***** Logs without schema
+- We'll have to write app specific parsers within Wonko. These parsers
+  might have be versioned.
+- This would be quite similar to what we see in Vogon, where we
+  hand-write the transformation for each source. This would probably
+  imply high maintenance.
+- Using storm/flume to analyze logs inside kafka seems to be a common
+  use case for complex queries around error information or when we
+  need to correlate information across services. But not for regular
+  health monitoring and alerting.
+***** Other
+We could also explore a combination of the above mechanisms.
