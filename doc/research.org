@@ -26,3 +26,49 @@
     - unable to parse feed
     - upload to s3 failed
     - number of successes/errors after parsing a feed
+
+** Day wise notes
+*** srihari-2016-02-04
+**** On using kafka as a messaging system between applications and Wonko
+***** Potential high level design
+#+begin_src
++---------+                              Kafka consumer       +----------+
+| krikkit | +----------> +-------+         +-------+------>   |prometheus|
++---------+              | kafka +-------> | wonko |          +----------+
+   Kafka producers       +-------+         +-------+            OR
++------------+             ^                       |
+| eccentrica |-------------+                       |      +------------------+
++------------+                                     +----> | riemann|graphite |
+                                                          +------------------+
+#+end_src
+
+***** Positives
+- Kafka will give us the high throughput we need when applications
+  send their real time events.
+- Producers (applications) will need to implement kafka producers
+  for sending events/logs, and the interface will be simple.
+- We could even just send logs, and stream-process it using Storm
+  or Flume to events for monitoring.
+- Kafka is amazing
+
+***** Negatives
++ Understanding kafka, operational overhead, instrumenting kafka and zookeeper
++ We probably won't use the stream processing capability of kafka for monitoring
++ The durability aspect isn't very important for monitoring
+  metrics because we're probably going to use a time series
+  database (graphite or prometheus) for monitoring graphs.
++ We only have one consumer -> Wonko.
+
+***** Resources
+- https://dzone.com/articles/reporting-metrics-apache-kafka
+- https://github.com/stealthly/metrics-kafka
+- http://blog.mmlac.com/log-transport-with-apache-kafka/
+- https://github.com/pingles/clj-kafka
+
+***** Conclusions
+- Kafka feels like an overkill for the problem of high volume of
+  requests, and seems quite unnecessary when we have low volume
+  (krikkit, initial release).
+- If we want to couple log processing with monitoring (I'm not
+  advocating this), then it might be a good solution to keep logs
+  in one place, process them for debugging or other insights.
