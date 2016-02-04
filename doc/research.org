@@ -1,0 +1,28 @@
+* Research and Spike notes
+
+** Goals for initial release
+    - simple interface for all sparx services
+    - monitor node level metrics: resource exhaustion (cpu spike, i/o spike, disk full)
+    - monitor low volume application level metrics: krikkit feed processed with error summary
+    - alerting: machine went down, queue full, feed not present, unable to parse feed, upload to s3 failed
+    - thresholds for alerts (example: 1st, 10th, 100th errors should be alerted)
+    - integration with pager-duty
+    - nice to have: graphs
+
+** Assumptions (for initial release)
+    - low volume: not real time requests
+    - log-like interface from applications (log/monitor from anywhere in the codebase with one line)
+    - no configuration in wonko (alert configs, etc would be within prometheus, or another solution)
+
+** Spike goals:
+    - what (if anything) to place between wonko and krikkit
+    - should we use prometheus or another monitoring solution, or build it inside wonko?
+    - data format to use between wonko and krikkit - with schema or schemaless?
+    - find out if we need to restrict the "type" of metrics wonko will accept - like prometheus' counter/gauge/histogram, etc
+    - node_exporter / other existing solutions / build it ourselves
+
+** Example list of metrics to monitor from krikkit
+    - feed not present
+    - unable to parse feed
+    - upload to s3 failed
+    - number of successes/errors after parsing a feed
