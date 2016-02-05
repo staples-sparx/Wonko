@@ -79,6 +79,30 @@
 (utils/log-info :sunrise/compute :start-cogs-computation-using-file-> (:parsed-file m))
 #+end_src
 
+** Notes on the kind of monitoring krikkit needs
+
+Pasting Pavan's notes from slack:
+
+There will be two kinds of things that we need in Krikkit:
+1) Current Status (good or bad) - This will help us find out when
+   things go down - nodes, feeds, jobs etc.
+2) Values over time - This will help us when things start degrading -
+   Feed processing time, memory usage etc. On the node level,
+   available disk space etc.
+
+In Krikkit, there are also interesting threshold kind of metrics as
+well. For example:
+- If the COGS of any SKU goes below a certain threshold, notify
+- If the number of SKUs from a given feed is off than a median # of
+  SKUs for that feed, notify
+
+So, the idea is since Krikkit can end up getting a lot of jobs and
+feeds, baby sitting it becomes a full time job. Instead, we should be
+able to know when things go wrong. Of course, it wont be exhaustive
+from day 1, but as we go along maintaining it, if its easy to start
+monitoring things that we usually do manually, our purpose with Wonko
+will be served.
+
 ** Day wise notes
 *** srihari-2016-02-04
 **** On using kafka as a messaging system between applications and Wonko
