@@ -27,58 +27,6 @@
     - upload to s3 failed
     - number of successes/errors after parsing a feed
 
-*** logs in krikkit
-#+begin_src
-(utils/log-event :job-scheduler/with-monitoring :job-result result)
-(utils/log-event :pipeline/run :completed :name name :pipeline-m result)
-(utils/log-event :pipeline/run :started :name name :pipeline-m m)
-(utils/log-event :pipeline/run :step-started :name name
-(utils/log-event :test-event-filtering :worked)
-(utils/log-info :catalog/job :message "Done computing new catalog")
-(utils/log-info :catalog/job :message "Starting to compute the new catalog")
-(utils/log-info :cogs/job :message "Cogs job completed.")
-(utils/log-info :cogs/job :message "Found a new sunrise feed. Starting the cogs job.")
-(utils/log-info :cogs/job :message "No new sunrise feed available.")
-(utils/log-info :cogs/new-feed-available? :message "Checking for a new sunrise feed")
-(utils/log-info :defensive/compute :done :catalog-file (catalog/catalog-file)
-(utils/log-info :defensive/compute :message "Starting to compute defensive cogs and price")
-(utils/log-info :edw/compute :finished-cogs-computation)
-(utils/log-info :edw/compute :start-cogs-computation-using-file-> (:parsed-file m)
-(utils/log-info :job-scheduler/schedule :scheduled-job job-name :frequency-in-ms millis)
-(utils/log-info :message "Created an edw cogs dump." :location file))
-(utils/log-info :message "Found a sku with a negetive min val. Changing it to 1 cent instead." :sku sku :key key)
-(utils/log-info :message "Please provide the right feed name." :given-feed-name (System/getProperty "feed-name"))
-(utils/log-info :message "Please provide the system property 'feed-name' that needs to be generated. The value needs to be a keyword. For ex: -Dfeed-name=:edw")
-(utils/log-info :message "Will dump edw cogs data from the database")
-(utils/log-info :mrkdm-sales/compute :computing-latest-cogs-min-max
-(utils/log-info :mrkdm-sales/compute result)
-(utils/log-info :oos-delta :message "No new delta feeds added after the last full feed.")
-(utils/log-info :oos-delta/job :message "Found a new delta feed now. Starting oos-delta job.")
-(utils/log-info :oos-delta/job :message "No new oos-delta feed available.")
-(utils/log-info :oos-delta/job :message "OOS delta job completed.")
-(utils/log-info :oos-delta/new-feed-available? :message "Checking for a Out of Stock delta feed")
-(utils/log-info :oos/job :message "Found a new oos full feed. Starting the oos-full job.")
-(utils/log-info :oos/job :message "No new oos-full feed.")
-(utils/log-info :oos/job :message "OOS full job completed.")
-(utils/log-info :oos/new-feed-available? :message "Checking for a new Out of Stock full feed")
-(utils/log-info :parsing.edw/parse :downloaded-file (:downloaded-file m)
-(utils/log-info :parsing.mrkdm-sales/parse :parsed parsed-file :file-name csv-file-name)
-(utils/log-info :parsing.mrkdm-sales/parse :parsing m)
-(utils/log-info :parsing.oos/parse :parsed parsed-file :file-name file-name)
-(utils/log-info :parsing.oos/parse :parsing m)
-(utils/log-info :parsing.pricedrop/parse :downloaded-file (:downloaded-file m)
-(utils/log-info :parsing.sunrise/parse :file (:downloaded-file m)
-(utils/log-info :pricedrop/job :message
-(utils/log-info :pricedrop/job :message "No new pricedrop feed available.")
-(utils/log-info :pricedrop/job :message "Pricedrop job completed.")
-(utils/log-info :pricedrop/new-feed-available? :message "Checking for a new pricedrop feed")
-(utils/log-info :server/start :server-started-on-port port))
-(utils/log-info :sku_instant_savings_price/download :remote-fqn remote-fqn
-(utils/log-info :sku_instant_savings_price/parse :csv-file csv-file)
-(utils/log-info :sunrise/compute :finished-cogs-computation)
-(utils/log-info :sunrise/compute :start-cogs-computation-using-file-> (:parsed-file m))
-#+end_src
-
 ** Notes on the kind of monitoring krikkit needs
 
 Pasting Pavan's notes from slack:
@@ -229,3 +177,14 @@ Notes:
   health monitoring and alerting.
 ***** Other
 We could also explore a combination of the above mechanisms.
+**** Existing solutions for exporting node level metrics
+A lot of existing monitoring tools have their own system resource
+monitoring exporters. There aren't many (any) generic exporters out
+there. Here are a few that might be useful when we build our standard
+exporter for wonko. My preference would be to fork prometheus'
+node_exporter written in go and make it generic.
+
+- https://github.com/zcaudate/sigmund
+- https://github.com/aphyr/riemann-tools/blob/master/bin/riemann-health
+- https://github.com/ganglia/monitor-core/tree/master/gmond/modules
+- https://github.com/prometheus/node_exporter
