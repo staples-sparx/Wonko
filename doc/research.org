@@ -188,3 +188,24 @@ node_exporter written in go and make it generic.
 - https://github.com/aphyr/riemann-tools/blob/master/bin/riemann-health
 - https://github.com/ganglia/monitor-core/tree/master/gmond/modules
 - https://github.com/prometheus/node_exporter
+
+** Notes - Tim
+
+- Kafka seems like overkill if we're going to set it up just for Wonko,
+  but since it is already set up, it might be the right choice, especially
+  since it's supposed to be the most performant (at least compared to RabbitMQ)
+- I think Sigmund (or equivalent clojure-based library) is a good choice for
+  node level metrics, at least as a first step. It saves us having to write/maintain
+  a new library, and all our monitoring code can live in one place. The machine level
+  monitoring code could potentially make it into a library/kits namespace.
+- Metric types I've seen everywhere are: timers (how long something took), counters (only increment), gauges.
+- Other metric types: Sets (statsd - count unique events), histograms (prometheus), summaries (prometheus).
+- It's probably good to start with the bare minimum here (counters, gauges) and then move on to the others.
+- InfluxDB is a schemaless solution. Clients send whatever (key-value pair) information they want, and it gets stored. Onus is on the client to do this properly. We could apropriate this design for ourselves, but it might be more trouble than it's worth.
+- Prometheus is already set up, so it's as good as any of the other alternatives to start with.
+- If we're using counters and gauges, the API Wonko exposes to Krikkit can't accept arbitrary data; it must be structured - metric-name, value (optionally), notes.
+
+*** Questions
+
+- Push / pull - does Wonko pull data from the client, or does the client send data to Wonko? This could probably work both ways. Continuous data (cpu/memory/io, etc.) which is not based on events can be pulled by Wonko. Event-based data can be pushed out as each event occurs. Still not too sure about this.
+- Do metrics have to be _registered_ with Wonko before we send data for them, or does Wonko accept whatever metrics are thrown at it? (almost certainly the latter, I think)
