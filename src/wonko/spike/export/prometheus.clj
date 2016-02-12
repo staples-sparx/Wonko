@@ -23,58 +23,57 @@
       #_(.labelNames (into-array (mapv ->prometheus-name label-names)))
       (.help help)))
 
-(defn create-histogram [metric-name help label-names {:keys [start width count]
-                                                      :or {start 0}
-                                                      :as bucket-config}]
+(defn create-histogram [registry metric-name help label-names
+                        {:keys [start width count] :or {start 0} :as bucket-config}]
   (-> (Histogram/build)
       (set-basics metric-name help label-names)
       (.linearBuckets (double start) (double width) (int count))
-      .register))
+      (.register registry)))
 
-(defn create-counter [metric-name help label-names]
+(defn create-counter [registry metric-name help label-names]
   (-> (Counter/build)
       (set-basics metric-name help label-names)
-      .register))
+      (.register registry)))
 
-(defn create-gauge [metric-name help label-names]
+(defn create-gauge [registry metric-name help label-names]
   (-> (Gauge/build)
       (set-basics metric-name help label-names)
-      .register))
-
-(defn registry []
-  (CollectorRegistry/defaultRegistry))
+      (.register registry)))
 
 (defprotocol Metric
-  (register [this label-values value]))
+  (register [this registry label-values value]))
 
 (extend-protocol Metric
   Histogram
-  (register [this label-values elapsed-ms]
+  (register [this registry label-values elapsed-ms]
     (-> this
         #_(.labels (into-array (map str label-values)))
         (.observe (double elapsed-ms))))
 
   Counter
-  (register [this label-values _]
+  (register [this registry label-values _]
     (-> this
         #_(.labels (into-array (map str label-values)))
         .inc))
 
   Gauge
-  (register [this label-values value]
+  (register [this registry label-values value]
     (-> this
         #_(.labels (into-array (map str label-values)))
         (.set (double value)))))
 
-(defn metrics-endpoint [request]
+(defn metrics-endpoint [registry]
   (let [writer (StringWriter.)]
-    (TextFormat/write004 writer (.metricFamilySamples (registry)))
+    (TextFormat/write004 writer (.metricFamilySamples registry))
     {:status  200
      :headers {"Content-Type" TextFormat/CONTENT_TYPE_004}
      :body    (.toString writer)}))
 
-(defn clear-default-registry []
-  (.clear (registry)))
-
 (defn init []
   (DefaultExports/initialize))
+
+(defn create-registry []
+  (CollectorRegistry.))
+
+(defn clear-registry [registry]
+  (.clear registry))
