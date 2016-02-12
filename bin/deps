@@ -1,0 +1,12 @@
+#!/bin/sh
+
+DEPS="ant lein kafka zookeeper s3"
+
+. ./bin/deps.d/prelude
+
+. ./bin/deps.d/java
+. ./bin/deps.d/ant
+. ./bin/deps.d/lein
+. ./bin/deps.d/kafka
+. ./bin/deps.d/s3
+. ./bin/deps.d/epilogue
