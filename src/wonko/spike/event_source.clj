@@ -1,6 +1,6 @@
 (ns wonko.spike.event-source
   (:require [wonko.spike.kafka.produce :as p]
-            [wonko.spike.admin :as admin])
+            [wonko.spike.kafka.admin :as admin])
   (:import [org.apache.kafka.clients.producer Producer]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

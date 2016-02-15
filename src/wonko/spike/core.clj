@@ -3,7 +3,7 @@
             [cider.nrepl :as cider]
             [clojure.tools.nrepl.server :as nrepl]
             [refactor-nrepl.middleware :as refactor-nrepl]
-            [wonko.spike.admin :as admin]
+            [wonko.spike.kafka.admin :as admin]
             [wonko.spike.alert :as alert]
             [wonko.spike.export.prometheus :as prometheus]
             [wonko.spike.kafka.consume :as consume]
