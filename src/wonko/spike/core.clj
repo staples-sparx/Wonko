@@ -5,13 +5,13 @@
             [refactor-nrepl.middleware :as refactor-nrepl]
             [wonko.spike.admin :as admin]
             [wonko.spike.alert :as alert]
-            [wonko.spike.export :as export]
+            [wonko.spike.export.prometheus :as prometheus]
             [wonko.spike.kafka.consume :as consume]
             [wonko.spike.event-source :as event-source]))
 
 (defn process [topic event]
   (alert/pager-duty event)
-  (export/prometheus topic event))
+  (prometheus/register-event topic event))
 
 (defn start []
   (consume/consume-topics {"krikkit" 2} process))

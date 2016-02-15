@@ -1,79 +1,49 @@
 (ns wonko.spike.export.prometheus
-  (:require [clojure.string :as s])
+  (:require [clojure.string :as s]
+            [wonko.spike.export.prometheus.create :as create]
+            [wonko.spike.export.prometheus.register :as register])
   (:import [io.prometheus.client Gauge Counter Histogram]
            [io.prometheus.client.hotspot DefaultExports]
            [io.prometheus.client CollectorRegistry]
            [io.prometheus.client.exporter.common TextFormat]
            [java.io StringWriter]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; This is a bridge to prometheus, and is copied from                   ;;
-;; eccentrica.utils.monitoring. We don't use prometheus labels with the ;;
-;; current wonko-api/schema.                                            ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; This contains prometheus created metrics in a map of the form:
+;; {:topic {:metric-type {metric-name metric} :registry registry}}
+(defonce created-metrics
+  (atom {}))
 
-(defn ->prometheus-name [metric-name]
-  (-> metric-name
-      name
-      (s/replace #"-" "_")))
+(defn get-label-names [properties]
+  (sort (keys properties)))
 
-(defn set-basics [metric metric-name help label-names]
-  (-> metric
-      (.name (->prometheus-name metric-name))
-      #_(.labelNames (into-array (mapv ->prometheus-name label-names)))
-      (.help help)))
+(defn get-label-values [properties]
+  (map properties (get-label-names properties)))
 
-(defn create-histogram [registry metric-name help label-names
-                        {:keys [start width count] :or {start 0} :as bucket-config}]
-  (-> (Histogram/build)
-      (set-basics metric-name help label-names)
-      (.linearBuckets (double start) (double width) (int count))
-      (.register registry)))
+(defn get-or-create-metric [registry topic {:keys [metric-name metric-type properties] :as event}]
+  (let [metric-path [topic (keyword metric-type) metric-name]
+        label-names (get-label-names properties)]
+    (or (get-in @created-metrics metric-path)
+        (let [created-metric (create/metric registry (assoc event :label-names label-names))]
+          (swap! created-metrics assoc-in metric-path created-metric)
+          created-metric))))
 
-(defn create-counter [registry metric-name help label-names]
-  (-> (Counter/build)
-      (set-basics metric-name help label-names)
-      (.register registry)))
+(defn get-or-create-registry [topic]
+  (let [registry-path [topic :registry]]
+    (or (get-in @created-metrics registry-path)
+        (let [created-registry (create/registry)]
+          (swap! created-metrics assoc-in registry-path created-registry)
+          created-registry))))
 
-(defn create-gauge [registry metric-name help label-names]
-  (-> (Gauge/build)
-      (set-basics metric-name help label-names)
-      (.register registry)))
+(defn register-event [topic {:keys [metric-value properties] :as event}]
+  (let [registry (get-or-create-registry topic)
+        metric (get-or-create-metric registry topic event)
+        label-values (get-label-values properties)]
+    (register/metric metric (assoc event :label-values label-values))))
 
-(defprotocol Metric
-  (register [this registry label-values value]))
-
-(extend-protocol Metric
-  Histogram
-  (register [this registry label-values elapsed-ms]
-    (-> this
-        #_(.labels (into-array (map str label-values)))
-        (.observe (double elapsed-ms))))
-
-  Counter
-  (register [this registry label-values _]
-    (-> this
-        #_(.labels (into-array (map str label-values)))
-        .inc))
-
-  Gauge
-  (register [this registry label-values value]
-    (-> this
-        #_(.labels (into-array (map str label-values)))
-        (.set (double value)))))
-
-(defn metrics-endpoint [registry]
-  (let [writer (StringWriter.)]
+(defn metrics-endpoint [topic]
+  (let [registry (get-or-create-registry topic)
+        writer (StringWriter.)]
     (TextFormat/write004 writer (.metricFamilySamples registry))
     {:status  200
      :headers {"Content-Type" TextFormat/CONTENT_TYPE_004}
      :body    (.toString writer)}))
-
-(defn init []
-  (DefaultExports/initialize))
-
-(defn create-registry []
-  (CollectorRegistry.))
-
-(defn clear-registry [registry]
-  (.clear registry))
