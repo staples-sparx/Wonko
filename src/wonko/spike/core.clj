@@ -11,8 +11,7 @@
   (prn event))
 
 (defn start []
-  (for [topic (admin/list-topics)]
-    (consume/consume-stream topic process)))
+  (consume/consume-topics {"krikkit" 2} process))
 
 (comment
   (event-source/krikkit)

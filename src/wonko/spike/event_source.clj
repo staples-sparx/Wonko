@@ -29,6 +29,7 @@
     (admin/create-topic topic)
     (run
       (fn []
+        (spit "wonko.log" "generating krikkit events\n" :append true)
         (p/counter producer topic :cogs-job-completed)
         (p/counter producer topic :no-new-surise-feed-found :alert true)
 

@@ -12,6 +12,13 @@
 ;;  to scale this.                                                       ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce stop?
+  (atom false))
+
+(defn stop []
+  (swap! stop? (constantly true)))
+
+
 (def config {"zookeeper.connect" "localhost:2182"
              "group.id" "clj-kafka.consumer"
              "auto.offset.reset" "smallest"
@@ -26,10 +33,25 @@
     (catch JsonParseException e
       (prn "Couldn't parse Message"))))
 
-(defn consume-stream [topic process-fn]
+(defn consume-a-stream [topic stream process-fn]
+  (future ;; put this into a thread from a threadpool
+    (spit "wonko.log" (str {:msg "starting to consume a stream" :topic topic} "\n") :append true)
+    (let [^ConsumerIterator it (.iterator ^KafkaStream stream)]
+      (spit "wonko.log" (str  "Has next?" (.hasNext it) "\n") :append true)
+      (while (and (.hasNext it) (not @stop?))
+        (let [event (parse (.next it))]
+          (process-fn topic event)
+          (spit "wonko.log" (str event "\n") :append true))))))
+
+(defn consume-topics [topic-stream-config process-fn]
+  (swap! stop? (constantly false))
   (k/with-resource [c (kc/consumer config)]
     kc/shutdown
-    (let [stream (kc/create-message-stream c topic)
-          ^ConsumerIterator it (.iterator ^KafkaStream stream)]
-      (while (.hasNext it)
-        (process-fn topic (parse (.next it)))))))
+    (let [all-topic-streams (kc/create-message-streams c topic-stream-config)
+          jobs (for [[topic streams] all-topic-streams
+                     stream streams]
+                 (consume-a-stream topic stream process-fn))]
+      (doall (map deref jobs)))))
+
+(comment
+  (consume-topics {"krikkit" 2}))

@@ -16,3 +16,7 @@
 
 (defn list-topics []
   (zk/topics {"zookeeper.connect" "127.0.0.1:2182"}))
+
+(defn delete-all-topics []
+  (for [topic (list-topics)]
+    (delete-topic topic)))

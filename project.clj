@@ -4,6 +4,7 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [clj-kafka "0.3.4"]
                  [cheshire "5.5.0"]
+                 [cider/cider-nrepl "0.10.2"]
                  [io.prometheus/simpleclient "0.0.11"]
                  [io.prometheus/simpleclient_hotspot "0.0.11"]
                  [io.prometheus/simpleclient_servlet "0.0.11"]

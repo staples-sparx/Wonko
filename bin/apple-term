@@ -1,0 +1,64 @@
+#!/bin/ksh -
+
+me=`basename $0`
+title="Automated Terminal"
+bg="black"
+fg="white"
+cursor="green"
+killontermination=0
+newtab=0
+
+while true ; do
+  case "$1" in
+    -h|--help) echo "Help" ; shift ;;
+    -t|--title) title=$2 ; shift 2 ;;
+    -f|--fg) fg=$2 ; shift 2 ;;
+    -b|--bg) bg=$2 ; shift 2 ;;
+    -c|--cursor) cursor=$2 ; shift 2 ;;
+    -x|--exit) killontermination=1 ; shift ;;
+    -n|--new-tab) newtab=1 ; shift ;;
+    *) break ;;
+  esac
+done
+
+if [ 1 == $killontermination ] ; then
+  cmd="$1 ; exit"
+else
+  cmd=$1
+fi
+
+if [ 1 -eq newtab ] ; then
+/usr/bin/osascript <<-EOF
+activate application "Terminal"
+tell application "System Events"
+  tell process "Terminal"
+    keystroke "t" using {command down}
+  end tell
+end tell
+tell application "Terminal"
+  do script with command "$cmd" in selected tab of the front window
+    tell selected tab of the front window
+        set custom title to "${title}"
+        set background color to "${bg}"
+        set cursor color to "${cursor}"
+        set normal text color to "${fg}"
+    end tell
+end tell
+EOF
+exit $?
+else
+/usr/bin/osascript <<-EOF
+tell application "Terminal"
+    do script with command "$cmd"
+    tell front window
+        set the bounds to {100, 100, 800, 500}
+        set background color to "${bg}"
+        set cursor color to "${cursor}"
+        set normal text color to "${fg}"
+        set custom title to "${title}"
+     end tell
+     activate
+end tell
+EOF
+exit $?
+fi
