@@ -54,6 +54,7 @@ start() {
   init_term
   run_term "ZK" "${PRELUDE} ./bin/deps start --fg zookeeper"
   run_term "Kafka" "${PRELUDE} ./bin/deps start --fg kafka"
+  run_term "Wonko" "${PRELUDE} ./bin/svc start wonko"
 }
 
 stop() {

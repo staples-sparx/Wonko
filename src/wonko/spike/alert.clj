@@ -9,4 +9,4 @@
 
 (defn pager-duty [{:keys [metric-type metric-name options] :as event}]
   (if (:alert options)
-    (prn (str "Paging someone. This bad thing happened:" metric-name))))
+    (spit "wonko.log" (str "Paging someone. This bad thing happened:" metric-name) :append true)))

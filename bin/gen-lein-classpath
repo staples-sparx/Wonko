@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Generate lein classpath in a file system agnostic way
+#
+
+SVC_ROOT=$(cd  $(dirname $0)/..; pwd -P)
+export SVC_ROOT
+
+usage() {
+  cat <<EOF
+USAGE:
+
+  ${me} <output-file>
+
+$1
+
+EOF
+
+}
+
+TMP_FILE=$(mktemp -t classpath.XXXXX)
+
+lein with-profiles user classpath "$TMP_FILE" && sed "s/$(echo ${SVC_ROOT} | sed 's/\//\\\//g')/$\{SVC_ROOT\}/g" "$TMP_FILE" > $1
+rm -rf $TMP_FILE

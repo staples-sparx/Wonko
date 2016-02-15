@@ -38,10 +38,12 @@
     (spit "wonko.log" (str {:msg "starting to consume a stream" :topic topic} "\n") :append true)
     (let [^ConsumerIterator it (.iterator ^KafkaStream stream)]
       (spit "wonko.log" (str  "Has next?" (.hasNext it) "\n") :append true)
-      (while (and (.hasNext it) (not @stop?))
-        (let [event (parse (.next it))]
-          (process-fn topic event)
-          (spit "wonko.log" (str event "\n") :append true))))))
+      (loop []
+        (when (and (.hasNext it) (not @stop?))
+          (let [event (parse (.next it))]
+            (process-fn topic event)
+            (spit "wonko.log" (str event "\n") :append true)))
+        (recur)))))
 
 (defn consume-topics [topic-stream-config process-fn]
   (swap! stop? (constantly false))

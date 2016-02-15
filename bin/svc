@@ -1,0 +1,168 @@
+#!/bin/sh
+#
+
+me=`basename $0`
+from=`dirname $0`
+SVC_CMD=$1
+shift
+SVC_NAME=$1
+shift
+
+usage() {
+  cat <<EOF
+USAGE:
+  ${me} status <service>       : Print server pid and process
+  ${me} stop <service>         : Stop service (gracefully)
+
+  ${me} start <service> [-d] [-e <env>] [-p <port>] [-r <nrepl-port>
+      Start service
+
+  ${me} restart <service> [-d] [-e <env>] [-p <port>] [-r <nrepl-port>
+      Restart service
+
+
+
+WHERE <service> can be:
+    - wonko
+$1
+
+EOF
+
+}
+
+daemonize=0
+while true ; do
+  echo "$1"
+  case "$1" in
+    -h|--help) usage ; exit 0 ;;
+    -d) daemonize=1 ; echo "daemon!! ${daemonize}"; shift ;;
+    -e) SVC_ENV=$2 ; shift ; shift ;;
+    -p) SVC_HTTP_PORT=$2 ; shift ; shift ;;
+    -r) SVC_NREPL_PORT=$2 ; shift ; shift ;;
+    -j) SVC_JVM_OPTS=$2 ; shift ; shift ;;
+    "") break;;
+    *) echo "Invalid option $1" ; usage ; exit 1 ;;
+  esac
+done
+
+#
+# Validate command usage
+#
+
+
+case ${SVC_CMD} in
+start) ;;
+stop) ;;
+restart) ;;
+status) ;;
+reset_db) ;;
+wait_for_server_to_die) ;;
+*) usage "ERROR: Unknown command '${SVC_CMD}'"; exit 1;;
+esac
+
+case ${SVC_NAME} in
+wonko)
+        SVC_HTTP_PORT=${SVC_HTTP_PORT:-12000} ;
+        SVC_NREPL_PORT=${SVC_NREPL_PORT:-12001} ;
+        ;;
+*) usage "ERROR: Unknown service '${SVC_NAME}'"; exit 1 ;;
+esac
+
+#
+# Actual command execution
+#
+
+SVC_ROOT=`cd ${from}/..; pwd`
+export SVC_ROOT
+. "${from}/env"
+
+create_dir_if_exists() {
+    [ ! -z "${1}" ]  && [ ! -d "${1}" ]
+}
+
+create_dirs() {
+  mkdir -p "${pid_dir}"
+  for d in "${incidents_dir}" "${tracing_dir}"
+  do
+      create_dir_if_exists ${d}
+  done
+
+  touch "${SVC_PID_FILE}"
+}
+
+
+start() {
+
+  create_dirs
+
+  cmd="${JAVA_PROG}
+        -cp ${JVM_CLASSPATH}:${JVM_TEST_CLASSPATH}
+        ${JVM_SERVER_OPTS}
+        ${SVC_JVM_OPTS}
+        clojure.main ${SVC_ROOT}/bin/cli.clj
+        --name ${SVC_NAME}
+        --port ${SVC_HTTP_PORT}
+        --nrepl-port ${SVC_NREPL_PORT}"
+
+  echo "da $1"
+
+  if [ 0 -ne ${daemonize} ]; then
+      # nohup doesn't work in tmux on OSX =/
+      if [ -f /usr/local/bin/reattach-to-user-namespace ]; then
+          reattach-to-user-namespace nohup ${cmd} &
+      else
+          nohup ${cmd} &
+      fi
+
+    echo ${svc_pid} > "${SVC_PID_FILE}.${svc_pid}"
+    echo "Started server [pid ${svc_pid}]"
+  else
+    echo "Starting server [pid $$]"
+    echo $$ > "${SVC_PID_FILE}.$$"
+
+    exec ${cmd}
+  fi
+}
+
+wait_for_server_to_die() {
+  pid=$(cat ${SVC_PID_FILE}.*)
+  ps -p$pid 2>&1 > /dev/null
+  status=$?
+  while [ "0" = "$status" ] ; do
+      echo "Server $pid is still alive..."
+      sleep 1
+      ps -p$pid 2>&1 > /dev/null
+      status=$?
+  done
+  echo "Server $pid is no more"
+}
+
+forceful_stop() {
+  create_dirs
+  kill -TERM $(cat "${SVC_PID_FILE}")
+}
+
+stop() {
+  create_dirs
+
+  processes=$(cat ${SVC_PID_FILE}.*)
+  for process in ${processes}; do
+    echo "Killing ${process} from ${SVC_PID_FILE}.${process}"
+    kill -TERM "${process}"
+  done
+  rm ${SVC_PID_FILE}.*
+}
+
+restart() {
+  stop
+  wait_for_server_to_die
+  start
+}
+
+status() {
+  create_dirs
+  cat "${SVC_PID_FILE}"
+  pgrep -fl ${SVC_NAME}
+}
+
+${SVC_CMD} ${SVC_NAME} ${daemonize}
