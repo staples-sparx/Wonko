@@ -3,6 +3,7 @@
   :url "git@github.com:staples-sparx/Wonko.git"
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [clj-kafka "0.3.4"]
+                 [clj-http "2.0.0"]
                  [cheshire "5.5.0"]
                  [cider/cider-nrepl "0.10.2"]
                  [refactor-nrepl "2.0.0"]

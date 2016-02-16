@@ -11,7 +11,7 @@
             [wonko.spike.event-source :as event-source]))
 
 (defn process [topic event]
-  (alert/pager-duty event)
+  (alert/pager-duty (config/pager-duty) event)
   (prometheus/register-event topic event))
 
 (defn start []
