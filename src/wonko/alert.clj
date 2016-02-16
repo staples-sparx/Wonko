@@ -1,13 +1,6 @@
-(ns wonko.spike.alert
+(ns wonko.alert
   (:require [clj-http.client :as http]
             [cheshire.core :as json]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; This namespace will configure, and if necessary, send alerts via    ;;
-;; email, pager-duty, etc. Each of which can be under this. See        ;;
-;; kits.alerts and eccentrica.utils.alerts namespaces for integrations ;;
-;; with pager duty.                                                    ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn send-alert? [event]
   (get-in event [:options :alert]))

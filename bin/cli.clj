@@ -1,5 +1,5 @@
 (ns cli
-  (:require [wonko.spike.core :as launcher]))
+  (:require [wonko.core :as launcher]))
 
 (prn *command-line-args*)
 (let [args (apply str (interpose " " *command-line-args*))]

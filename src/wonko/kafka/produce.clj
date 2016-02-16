@@ -1,4 +1,4 @@
-(ns wonko.spike.kafka.produce
+(ns wonko.kafka.produce
   (:require [cheshire.core :as json]
             [clj-kafka.new.producer :as kp])
   (:import [org.apache.kafka.common.serialization Serializer]

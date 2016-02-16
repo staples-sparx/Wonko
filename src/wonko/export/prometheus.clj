@@ -1,7 +1,7 @@
-(ns wonko.spike.export.prometheus
+(ns wonko.export.prometheus
   (:require [clojure.string :as s]
-            [wonko.spike.export.prometheus.create :as create]
-            [wonko.spike.export.prometheus.register :as register])
+            [wonko.export.prometheus.create :as create]
+            [wonko.export.prometheus.register :as register])
   (:import [io.prometheus.client Gauge Counter Histogram]
            [io.prometheus.client.hotspot DefaultExports]
            [io.prometheus.client CollectorRegistry]

@@ -1,10 +1,10 @@
-(ns wonko.spike.web-server
-  (:require [wonko.spike.config :as config]
+(ns wonko.web-server
+  (:require [wonko.config :as config]
             [compojure.core :as cc]
             [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.adapter.jetty :as ring-jetty]
-            [wonko.spike.export.prometheus :as prometheus])
+            [wonko.export.prometheus :as prometheus])
   (:import [org.eclipse.jetty.server.handler StatisticsHandler]))
 
 (defonce ^:private web-server (atom nil))

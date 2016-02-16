@@ -1,4 +1,4 @@
-(ns wonko.spike.config)
+(ns wonko.config)
 
 (defn consumer []
   {"zookeeper.connect" "localhost:2182"

@@ -1,16 +1,9 @@
-(ns wonko.spike.kafka.consume
+(ns wonko.kafka.consume
   (:require [cheshire.core :as json]
             [clj-kafka.consumer.zk :as kc]
             [clj-kafka.core :as k])
   (:import [kafka.consumer ConsumerIterator Consumer KafkaStream]
            [com.fasterxml.jackson.core JsonParseException]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; A simple kafka consumer client for wonko. Currently does not preserve ;;
-;;  the 'offset' across executions. `consume-stream` is currently single ;;
-;;  threaded. Use Kafka streams and threads as in https://goo.gl/pfxinq  ;;
-;;  to scale this.                                                       ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce ^Consumer consumer
   (atom nil))

@@ -1,4 +1,4 @@
-(ns wonko.spike.kafka.admin
+(ns wonko.kafka.admin
   (require [clj-kafka.admin :as admin]
            [clj-kafka.zk :as zk]))
 
