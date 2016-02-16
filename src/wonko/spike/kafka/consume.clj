@@ -2,7 +2,7 @@
   (:require [cheshire.core :as json]
             [clj-kafka.consumer.zk :as kc]
             [clj-kafka.core :as k])
-  (:import [kafka.consumer ConsumerIterator KafkaStream]
+  (:import [kafka.consumer ConsumerIterator Consumer KafkaStream]
            [com.fasterxml.jackson.core JsonParseException]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -12,17 +12,11 @@
 ;;  to scale this.                                                       ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce stop?
-  (atom false))
+(defonce ^Consumer consumer
+  (atom nil))
 
-(defn stop []
-  (swap! stop? (constantly true)))
-
-
-(def config {"zookeeper.connect" "localhost:2182"
-             "group.id" "clj-kafka.consumer"
-             "auto.offset.reset" "smallest"
-             "auto.commit.enable" "false"})
+(defn init! [config]
+  (reset! consumer (kc/consumer config)))
 
 (defn parse [msg]
   (try
@@ -31,7 +25,7 @@
         (#(String. %))
         (json/decode true))
     (catch JsonParseException e
-      (prn "Couldn't parse Message"))))
+      (spit "wonko.log" (str "Couldn't parse Message" "\n") :append true))))
 
 (defn consume-a-stream [topic stream process-fn]
   (future ;; put this into a thread from a threadpool
@@ -39,21 +33,23 @@
     (let [^ConsumerIterator it (.iterator ^KafkaStream stream)]
       (spit "wonko.log" (str  "Has next?" (.hasNext it) "\n") :append true)
       (loop []
-        (when (and (.hasNext it) (not @stop?))
+        (when (.hasNext it)
           (let [event (parse (.next it))]
-            (process-fn topic event)
-            (spit "wonko.log" (str event "\n") :append true)))
+            (spit "wonko.log" (str "processing " event "\n") :append true)
+            (process-fn topic event)))
         (recur)))))
 
-(defn consume-topics [topic-stream-config process-fn]
-  (swap! stop? (constantly false))
-  (k/with-resource [c (kc/consumer config)]
-    kc/shutdown
-    (let [all-topic-streams (kc/create-message-streams c topic-stream-config)
-          jobs (for [[topic streams] all-topic-streams
-                     stream streams]
-                 (consume-a-stream topic stream process-fn))]
-      (doall (map deref jobs)))))
+(defn start-consuming-topics [topic-stream-config process-fn]
+  (let [all-topic-streams (kc/create-message-streams @consumer topic-stream-config)
+        jobs (doall (for [[topic streams] all-topic-streams
+                          stream streams]
+                      (consume-a-stream topic stream process-fn)))]
+    jobs))
+
+(defn stop-consuming-topics [jobs]
+  (doseq [job jobs]
+    (future-cancel job))
+  (kc/shutdown @consumer))
 
 (comment
   (consume-topics {"krikkit" 2}))

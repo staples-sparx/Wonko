@@ -3,6 +3,7 @@
             [cider.nrepl :as cider]
             [clojure.tools.nrepl.server :as nrepl]
             [refactor-nrepl.middleware :as refactor-nrepl]
+            [wonko.spike.config :as config]
             [wonko.spike.kafka.admin :as admin]
             [wonko.spike.alert :as alert]
             [wonko.spike.export.prometheus :as prometheus]
@@ -14,7 +15,11 @@
   (prometheus/register-event topic event))
 
 (defn start []
-  (consume/consume-topics {"krikkit" 2} process))
+  (consume/init! (config/consumer))
+  (consume/start-consuming-topics (config/topic-streams) process))
+
+(defn stop [jobs]
+  (consume/stop-consuming-topics jobs))
 
 (defn- start-nrepl! [port]
   (nrepl/start-server
@@ -35,4 +40,5 @@
 (comment
   (event-source/krikkit)
   (event-source/eccentrica)
-  (start))
+  (def fs (start))
+  (stop fs))
