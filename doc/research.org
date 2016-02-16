@@ -214,3 +214,7 @@ node_exporter written in go and make it generic.
 2) Currently, if we change the properties/labels while producing
    events, there's no error. But wonko will fail to set the labels in
    prometheus saying that the label values are wrong.
+3) Just sending event level information for alerts might be
+   insufficient to track down the root cause of the issue. Should we
+   support an :alert-info in the optional map where arbitrary details
+   regarding the alert can be sent in?
