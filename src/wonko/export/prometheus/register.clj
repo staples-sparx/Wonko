@@ -1,4 +1,4 @@
-(ns wonko.spike.export.prometheus.register
+(ns wonko.export.prometheus.register
   (:require [clojure.string :as s])
   (:import [io.prometheus.client Gauge Counter Histogram]))
 

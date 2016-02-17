@@ -51,10 +51,9 @@ from day 1, but as we go along maintaining it, if its easy to start
 monitoring things that we usually do manually, our purpose with Wonko
 will be served.
 
-** Day wise notes
-*** srihari-2016-02-04
-**** On using kafka as a messaging system between applications and Wonko
-***** Implied high level design
+** srihari-2016-02-04
+*** On using kafka as a messaging system between applications and Wonko
+**** Implied high level design
 #+begin_src
 +---------+                              Kafka consumer       +----------+
 | krikkit | +----------> +-------+         +-------+------>   |prometheus|
@@ -66,7 +65,7 @@ will be served.
                                                           +------------------+
 #+end_src
 
-***** Positives
+**** Positives
 - Kafka will give us the high throughput we need when applications
   send their real time events (~5k requests per second).
 - Producers (applications) will need to implement kafka producers
@@ -75,7 +74,7 @@ will be served.
   or Flume to events for monitoring.
 - Kafka is amazing
 
-***** Negatives
+**** Negatives
 + Understanding kafka, operational overhead, instrumenting kafka and zookeeper
 + We probably won't use the stream processing capability of kafka for monitoring
 + The durability aspect isn't very important for monitoring
@@ -83,13 +82,13 @@ will be served.
   database (graphite or prometheus) for monitoring graphs.
 + We only have one consumer -> Wonko.
 
-***** Resources
+**** Resources
 - https://dzone.com/articles/reporting-metrics-apache-kafka
 - https://github.com/stealthly/metrics-kafka
 - http://blog.mmlac.com/log-transport-with-apache-kafka/
 - https://github.com/pingles/clj-kafka
 
-***** Conclusions
+**** Conclusions
 - Kafka would be a good message buffer to solve the problem of high
   volume of requests, but from the features it provides, it feels like
   we'll be under-utilizing it, which hints at a different solution.
@@ -101,14 +100,14 @@ will be served.
   solution to keep logs in one place (kafka), process them (using
   Storm or Flume) for debugging or other insights besides monitoring.
 
-**** Should we use prometheus or another monitoring solution, or build it inside wonko?
+*** Should we use prometheus or another monitoring solution, or build it inside wonko?
 - Wonko would be the interface for applications, so the initial choice shouldn't matter much.
     - We should however pick an existing solution before debating
       writing something within wonko, so that Wonko can be used.
 - For the first release at least, I think we should Prometheus.
     - We have used prometheus/grafana for a while now to monitor node level metrics, and it works.
     - We have already built integration with prometheus for 3 projects (HK, EP, Hatter).
-**** Wonko API
+*** Wonko API
 - This is regarding the shape of requests/api calls that services like
   krikkit and EP will make to wonko. I see the following alternatives
   (ordered by priority).
@@ -117,7 +116,7 @@ will be served.
   2. Logs with schema
   2. Logs without schema
 
-***** Metrics
+**** Metrics
 For example, krikkit/EP would have the following along with the log lines:
 #+begin_src
 ;; metric-type metric-name map-of-labels-and-values options
@@ -147,7 +146,7 @@ Resources:
   3 https://github.com/StaplesLabs/Eccentrica/blob/master/src/eccentrica/utils/monitoring.clj
   4 https://github.com/StaplesLabs/Eccentrica/blob/master/src/eccentrica/monitoring.clj
 
-***** Logs with schema
+**** Logs with schema
 For example, krikkit/EP would have the following log lines:
 #+begin_src
 ;; log/log-level metric-name metric-info-map
@@ -165,7 +164,7 @@ Notes:
   inside wonko, which would be very similar to the "without schema"
   solution in disadvantages.
 
-***** Logs without schema
+**** Logs without schema
 - We'll have to write app specific parsers within Wonko. These parsers
   might have be versioned.
 - This would be quite similar to what we see in Vogon, where we
@@ -175,9 +174,9 @@ Notes:
   use case for complex queries around error information or when we
   need to correlate information across services. But not for regular
   health monitoring and alerting.
-***** Other
+**** Other
 We could also explore a combination of the above mechanisms.
-**** Existing solutions for exporting node level metrics
+*** Existing solutions for exporting node level metrics
 A lot of existing monitoring tools have their own system resource
 monitoring exporters. There aren't many (any) generic exporters out
 there. Here are a few that might be useful when we build our standard
@@ -188,3 +187,34 @@ node_exporter written in go and make it generic.
 - https://github.com/aphyr/riemann-tools/blob/master/bin/riemann-health
 - https://github.com/ganglia/monitor-core/tree/master/gmond/modules
 - https://github.com/prometheus/node_exporter
+
+** Notes - Tim
+
+- Kafka seems like overkill if we're going to set it up just for Wonko,
+  but since it is already set up, it might be the right choice, especially
+  since it's supposed to be the most performant (at least compared to RabbitMQ)
+- I think Sigmund (or equivalent clojure-based library) is a good choice for
+  node level metrics, at least as a first step. It saves us having to write/maintain
+  a new library, and all our monitoring code can live in one place. The machine level
+  monitoring code could potentially make it into a library/kits namespace.
+- Metric types I've seen everywhere are: timers (how long something took), counters (only increment), gauges.
+- Other metric types: Sets (statsd - count unique events), histograms (prometheus), summaries (prometheus).
+- It's probably good to start with the bare minimum here (counters, gauges) and then move on to the others.
+- InfluxDB is a schemaless solution. Clients send whatever (key-value pair) information they want, and it gets stored. Onus is on the client to do this properly. We could apropriate this design for ourselves, but it might be more trouble than it's worth.
+- Prometheus is already set up, so it's as good as any of the other alternatives to start with.
+- If we're using counters and gauges, the API Wonko exposes to Krikkit can't accept arbitrary data; it must be structured - metric-name, value (optionally), notes.
+
+*** Questions
+
+- Push / pull - does Wonko pull data from the client, or does the client send data to Wonko? This could probably work both ways. Continuous data (cpu/memory/io, etc.) which is not based on events can be pulled by Wonko. Event-based data can be pushed out as each event occurs. Still not too sure about this.
+- Do metrics have to be _registered_ with Wonko before we send data for them, or does Wonko accept whatever metrics are thrown at it? (almost certainly the latter, I think)
+** Questions
+1) Will `wonko.spike.kafka.produce` be distributed to kits? Is there a
+   way to keep the file closer to the wonko repository?
+2) Currently, if we change the properties/labels while producing
+   events, there's no error. But wonko will fail to set the labels in
+   prometheus saying that the label values are wrong.
+3) Just sending event level information for alerts might be
+   insufficient to track down the root cause of the issue. Should we
+   support an :alert-info in the optional map where arbitrary details
+   regarding the alert can be sent in?

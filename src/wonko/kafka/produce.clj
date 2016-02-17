@@ -1,8 +1,9 @@
-(ns wonko.spike.kafka.produce
+(ns wonko.kafka.produce
   (:require [cheshire.core :as json]
             [clj-kafka.new.producer :as kp])
   (:import [org.apache.kafka.common.serialization Serializer]
-           [org.apache.kafka.clients.producer Producer]))
+           [org.apache.kafka.clients.producer Producer]
+           [com.fasterxml.jackson.core JsonGenerationException]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; This is the namespace that would be used by services like krikkit/EP ;;
@@ -26,8 +27,13 @@
                (Jsonizer.)))
 
 (defn send-message [message]
-  (let [record (kp/record @topic message)]
-    @(kp/send @producer record)))
+  (try
+   (let [record (kp/record @topic message)]
+     @(kp/send @producer record)
+     true)
+   (catch JsonGenerationException e
+     ;; message not sent
+     false)))
 
 (defn counter [metric-name properties & {:as options}]
   (send-message {:metric-type :counter
