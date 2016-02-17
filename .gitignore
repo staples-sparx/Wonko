@@ -11,3 +11,7 @@ pom.xml.asc
 .lein-failures
 .nrepl-port
 /logs/pids/*.pid*
+.vagrant
+/*tar.gz
+/*tar.bz2
+wonko.log
