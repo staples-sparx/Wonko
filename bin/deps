@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DEPS="ant lein kafka zookeeper s3"
+DEPS="ant lein kafka zookeeper s3 prometheus"
 
 . ./bin/deps.d/prelude
 
@@ -9,4 +9,5 @@ DEPS="ant lein kafka zookeeper s3"
 . ./bin/deps.d/lein
 . ./bin/deps.d/kafka
 . ./bin/deps.d/s3
+. ./bin/deps.d/prometheus
 . ./bin/deps.d/epilogue
