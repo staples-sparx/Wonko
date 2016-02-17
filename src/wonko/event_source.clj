@@ -39,7 +39,7 @@
         (p/counter :found-sku-with-negative-min-value nil)
         (p/counter :defensive/compute {:status :start})
         (p/counter :defensive/compute {:status :done})
-        (p/counter :cogs/job {:status :feed-unavailable})
+        (p/counter :cogs/job {:status :feed-unavailable} :alert true)
 
         ;; events of this form are not supported currently
         ;; (p/gauge :cogs-job-stats {:successes 107 :errors 3 :exec-time 42})
