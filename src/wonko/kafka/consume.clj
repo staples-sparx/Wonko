@@ -2,7 +2,8 @@
   (:require [cheshire.core :as json]
             [clj-kafka.consumer.zk :as kc]
             [clj-kafka.core :as k]
-            [wonko.utils :as utils])
+            [wonko.utils :as utils]
+            [kits.logging.log-async :as log])
   (:import [kafka.consumer ConsumerIterator Consumer KafkaStream]
            [com.fasterxml.jackson.core JsonParseException]))
 
@@ -13,25 +14,29 @@
   (reset! consumer (kc/consumer config)))
 
 (defn parse [msg]
-  (try
-    (-> (k/to-clojure msg)
-        :value
-        (#(String. %))
-        (json/decode true))
-    (catch JsonParseException e
-      (spit "wonko.log" (str "Couldn't parse Message" "\n") :append true))))
+  (let [string-msg (-> (k/to-clojure msg) :value (#(String. %)))]
+    (try
+      (json/decode string-msg true)
+      (catch JsonParseException e
+        (log/warn {:ns :consume :msg "Couldn't parse message"
+                   :kafka-msg string-msg
+                   :error-message (.getMessage e)
+                   :error-trace (map str (.getStackTrace e))})))))
 
 (defn consume-a-stream [topic stream process-fn]
-  (spit "wonko.log" (str {:msg "starting to consume a stream" :topic topic} "\n") :append true)
+  (log/info  {:ns :consume :msg "starting to consume a stream" :topic topic})
   (let [^ConsumerIterator it (.iterator ^KafkaStream stream)]
-    (spit "wonko.log" (str  "Has next?" (.hasNext it) "\n") :append true)
+    (log/debug {:ns :consume :msg (str "Does the stream have more items? " (.hasNext it))})
     (loop []
       (when (.hasNext it)
         (let [event (parse (.next it))]
-          (spit "wonko.log" (str "processing " event "\n") :append true)
+          (log/debug {:ns :consume :msg (str "processing " event)})
           (try (process-fn topic event)
                (catch Exception e
-                 (spit "wonko.log" (str "EXCEPTION. unable to process " event "\n") :append true)))))
+                 (log/warn {:ns :consume :msg "Unable to process an event from kafka"
+                            :kafka-event event
+                            :error-message (.getMessage e)
+                            :error-trace (map str (.getStackTrace e))})))))
       (recur))))
 
 (defn start-consuming-topics [topic-stream-config process-fn]

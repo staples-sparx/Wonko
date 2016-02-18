@@ -16,7 +16,7 @@
   (prometheus/register-event topic event))
 
 (defn start []
-  (log/start-thread-pool! (config/log)
+  (log/start-thread-pool! (config/log))
   (alert/init! (config/alert-thread-pool-size))
   (consume/init! (config/consumer))
   (consume/start-consuming-topics (config/topic-streams) process))

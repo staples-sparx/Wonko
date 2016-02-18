@@ -1,7 +1,8 @@
 (ns wonko.alert
   (:require [clj-http.client :as http]
             [cheshire.core :as json]
-            [wonko.utils :as utils]))
+            [wonko.utils :as utils]
+            [kits.logging.log-async :as log]))
 
 (def thread-pool
   (atom nil))
@@ -28,9 +29,13 @@
                  {:content-type :json
                   :body (json/encode body)
                   :throw-exceptions true})
-      (spit "wonko.log" "Sent an alert to pagerduty!\n" :append true))
+      (log/info {:ns :alert :msg "Sent an alert to pagerduty"})
+      true)
     (catch Exception e
-      (spit "wonko.log" "Posting to pagerduty failed!\n" :append true))))
+      (log/warn {:ns :alert :msg "Could not send alert to pagerduty"
+                 :error-message (.getMessage e)
+                 :error-trace (map str (.getStackTrace e))})
+      false)))
 
 (defn pager-duty [config topic event]
   (when (send-alert? event)

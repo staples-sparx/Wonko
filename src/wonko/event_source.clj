@@ -1,7 +1,9 @@
 (ns wonko.event-source
-  (:require [wonko.kafka.produce :as p]
-            [wonko.kafka.admin :as admin])
-  (:import [org.apache.kafka.clients.producer Producer]))
+  (:require [kits.logging.log-async :as log]
+            [wonko.kafka
+             [admin :as admin]
+             [produce :as p]])
+  (:import org.apache.kafka.clients.producer.Producer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; This namespace emulates krikkit, uses the wonko producer to send ;;
@@ -35,7 +37,7 @@
     (admin/create-topic topic)
     (run
       (fn []
-        (spit "wonko.log" "generating krikkit events\n" :append true)
+        (log/info {:ns :event-source :msg "generating krikkit events"})
         (p/counter :found-sku-with-negative-min-value nil)
         (p/counter :defensive/compute {:status :start})
         (p/counter :defensive/compute {:status :done})
