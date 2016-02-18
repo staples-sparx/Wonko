@@ -1,6 +1,10 @@
 (defproject wonko "0.1.0-SNAPSHOT"
+  :local-repo ".m2"
   :description "SparX Platform and Services monitoring application"
   :url "git@github.com:staples-sparx/Wonko.git"
+  :repositories {"runa-maven-s3" {:url "s3p://runa-maven/releases/"
+                                  :username [:gpg :env/archiva_username]
+                                  :passphrase [:gpg :env/archiva_passphrase]}}
   :dependencies [[cheshire "5.5.0"]
                  [cider/cider-nrepl "0.10.2"]
                  [clj-http "2.0.0"]
@@ -16,7 +20,9 @@
                  [org.clojure/tools.nrepl "0.2.12"]
                  [refactor-nrepl "2.2.0-SNAPSHOT"]
                  [ring/ring-core "1.4.0"]
-                 [ring/ring-jetty-adapter "1.4.0"]]
+                 [ring/ring-jetty-adapter "1.4.0"]
+                 [staples-sparx/wonko-client "0.1.1-SNAPSHOT"]]
   :main ^:skip-aot wonko.core
+  :plugins [[s3-wagon-private "1.2.0"]]
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

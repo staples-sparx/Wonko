@@ -7,7 +7,7 @@ LEIN = HTTP_CLIENT="curl --insecure -f -L -o" lein
 
 LEIN_ENV=ARCHIVA_USERNAME="${ARCHIVA_USERNAME}" ARCHIVA_PASSPHRASE="${ARCHIVA_PASSPHRASE}"
 
-all: deps lein-deps bin/lein-classpath force-config-edn log-dirs
+all: deps lein-deps bin/lein-classpath force-config-edn log-dirs checkouts/wonko-client
 
 distclean:
 	rm -rf ./.m2
@@ -58,3 +58,12 @@ deps-pull:
 	sudo chown -R "${USER}" /var/log/wonko/
 
 log-dirs: /var/log/wonko
+
+checkouts:
+	mkdir checkouts
+
+../wonko-client:
+	git clone git@github.com:StaplesLabs/wonko-client.git ../wonko-client
+
+checkouts/wonko-client: ../wonko-client checkouts
+	ln -fs ../../wonko-client $@
