@@ -1,0 +1,26 @@
+#     -*- mode: sh -*-
+#
+# Wonko app env settings
+#
+
+LEIN_CLASSPATH=$(cat ${SVC_ROOT}/bin/lein-classpath | sed "s/\${SVC_ROOT}/$(echo ${SVC_ROOT} | sed 's/\//\\\//g')/g")
+JVM_CLASSPATH=${SVC_ROOT}/resources:${SVC_ROOT}/src:${SVC_ROOT}/test/:${LEIN_CLASSPATH}
+
+JVM_TEST_CLASSPATH="${SVC_ROOT}/test"
+
+JVM_HEAP="1g"
+
+JVM_OPTS="-Dfile.encoding=UTF8 -Xms${JVM_HEAP} -Xmx${JVM_HEAP} -Dsun.net.client.defaultConnectTimeout=120000 -Dsun.net.client.defaultReadTimeout=120000 -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+CMSParallelRemarkEnabled -XX:MaxGCPauseMillis=5 -XX:+UseStringCache -XX:+OptimizeStringConcat -XX:+UseCompressedOops -XX:+AggressiveOpts -XX:MaxInlineSize=100 -Xloggc:/var/log/wonko/gc.log -verbose:gc -XX:+PrintGCDetails -XX:ErrorFile=/var/log/wonko/jvm-fatal%p.log -Dhttps.protocols=SSLv3 ${PROFILER_LIB} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n -XX:NewSize=512m -XX:MaxNewSize=512m -XX:MaxPermSize=256m"
+
+JVM_DIAG_OPTS="-Djavax.net.debug=all -XX:+PrintTLAB -XX:+PrintGCApplicationStoppedTime -verbose:gc -XX:+PrintGCDetails -XX:+PrintCompilation"
+JVM_CLIENT_OPTS="-client ${JVM_OPTS}"
+JVM_SERVER_OPTS="-server ${JVM_OPTS} ${DATOMIC_OPTS}"
+
+export JVM_CLIENT_OPTS
+export JVM_SERVER_OPTS
+
+JAVA_PROG=${JAVA_PROG:-java}
+export JAVA_PROG
+
+pid_dir="${SVC_ROOT}/logs/pids"
+SVC_PID_FILE="${pid_dir}/${SVC_NAME}.pid"

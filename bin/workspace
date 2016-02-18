@@ -1,0 +1,88 @@
+#!/bin/bash
+
+me=`basename $0`
+TOP_DIR=$(cd "$(dirname $0)/.."; pwd)
+
+BASEDIR="${TOP_DIR}"
+PRELUDE="cd $BASEDIR ;"
+
+die() {
+  echo $*
+  exit 1
+}
+
+case `uname -s` in
+  Darwin) MAC=1 ;;
+  Linux) LINUX=1 ;;
+  *) echo "Here's a nickel kid, buy yourself a real computer."
+esac
+
+
+if [ -n "${USE_TMUX}" ] || [ -n "${LINUX}" ]; then
+    TMUX_WORKSPACE=1
+fi
+
+TMUX_SESSION="wonko"
+
+init_term() {
+  if [ -n "${TMUX_WORKSPACE}" ]; then
+    TMUX="" tmux new-session -d -s "${TMUX_SESSION}"
+    tmux set-option -t "${TMUX_SESSION}" set-remain-on-exit on
+  fi
+}
+
+run_term() {
+  name=$1
+  shift
+  cmd="$*"
+
+  if [ -n "${TMUX_WORKSPACE}" ]; then
+      window_idx=`tmux lsw -F'#{window_index},#{window_name}' | grep "${name}$" | awk -F, '{print $1}'`
+      if [ -n "${window_idx}" ]; then
+          tmux kill-window -t "${TMUX_SESSION}:${window_idx}"
+      fi
+      tmux new-window -k -n "$name" -t "${TMUX_SESSION}" "$cmd"
+  else
+      ./bin/apple-term -n -t "$name" -b gray -f black "$cmd"
+      sleep 1
+  fi
+}
+
+start() {
+  echo "Starting Wonko workspace"
+
+  init_term
+  run_term "ZK" "${PRELUDE} ./bin/deps start --fg zookeeper"
+  run_term "Kafka" "${PRELUDE} ./bin/deps start --fg kafka"
+  run_term "Wonko" "${PRELUDE} ./bin/svc start wonko"
+}
+
+stop() {
+  cd "${BASEDIR}"
+  ./bin/deps stop all
+}
+
+restart() {
+  stop
+  start
+}
+
+usage() {
+    echo "USAGE: ${me} <cmd>"
+    echo ""
+    echo "WHERE <cmd> can be:"
+    echo "    start   : start all services required for this project"
+    echo "    stop    : stop all services"
+    echo "    restart : stop then start all services"
+}
+
+while true ; do
+  case "$1" in
+    -h|--help) usage ; exit 0 ;;
+    start) start ; shift ;;
+    stop) stop ; shift ;;
+    restart) restart ; shift ;;
+    "") exit 0;;
+    *) echo "Invalid option or command $1" ; usage ; exit 1 ;;
+  esac
+done

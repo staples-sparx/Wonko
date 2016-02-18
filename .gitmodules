@@ -1,0 +1,3 @@
+[submodule "bin/deps.d"]
+	path = bin/deps.d
+	url = git@github.com:StaplesLabs/Deps.git
