@@ -14,7 +14,7 @@
                  [org.clojure/clojure "1.7.0"]
                  [org.clojure/tools.cli "0.3.3"]
                  [org.clojure/tools.nrepl "0.2.12"]
-                 [refactor-nrepl "2.0.0"]
+                 [refactor-nrepl "2.2.0-SNAPSHOT"]
                  [ring/ring-core "1.4.0"]
                  [ring/ring-jetty-adapter "1.4.0"]]
   :main ^:skip-aot wonko.core
