@@ -7,7 +7,7 @@ LEIN = HTTP_CLIENT="curl --insecure -f -L -o" lein
 
 LEIN_ENV=ARCHIVA_USERNAME="${ARCHIVA_USERNAME}" ARCHIVA_PASSPHRASE="${ARCHIVA_PASSPHRASE}"
 
-all: deps lein-deps bin/lein-classpath force-config-edn
+all: deps lein-deps bin/lein-classpath force-config-edn log-dirs
 
 distclean:
 	rm -rf ./.m2
@@ -52,3 +52,9 @@ deps-check:
 
 deps-pull:
 	git submodule update --init
+
+/var/log/wonko:
+	sudo mkdir -p /var/log/wonko
+	sudo chown -R "${USER}" /var/log/wonko/
+
+log-dirs: /var/log/wonko

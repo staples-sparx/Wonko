@@ -8,13 +8,15 @@
             [wonko.alert :as alert]
             [wonko.export.prometheus :as prometheus]
             [wonko.kafka.consume :as consume]
-            [wonko.event-source :as event-source]))
+            [wonko.event-source :as event-source]
+            [kits.logging.log-async :as log]))
 
 (defn process [topic event]
   (alert/pager-duty (config/pager-duty) topic event)
   (prometheus/register-event topic event))
 
 (defn start []
+  (log/start-thread-pool! (config/log)
   (alert/init! (config/alert-thread-pool-size))
   (consume/init! (config/consumer))
   (consume/start-consuming-topics (config/topic-streams) process))
