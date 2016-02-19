@@ -1,29 +1,36 @@
-(ns wonko.config)
+(ns wonko.config
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]))
+
+(defonce ^:private config-resource
+  (-> "config.edn" io/resource))
+
+(defn read-config
+  ([] (read-config config-resource))
+  ([config] (-> config slurp edn/read-string)))
+
+(defonce current (atom (read-config)))
+
+(defn get-current []
+  @current)
+
+(defn lookup [& ks]
+  (get-in @current ks))
+
+(defn reload []
+  (reset! current (read-config)))
 
 (defn consumer []
-  {"zookeeper.connect" "localhost:2182"
-   "group.id" "clj-kafka.consumer"
-   "auto.offset.reset" "smallest"
-   "auto.commit.enable" "false"})
+  (lookup :consumer))
 
 (defn topic-streams []
-  {"krikkit" 2})
+  (lookup :topic-streams))
 
 (defn pager-duty []
-  {:api-endpoint "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
-   :api-key "4bbd297e0f7e43cc948f7894b7d8ec7b"})
+  (lookup :pager-duty))
 
 (defn alert-thread-pool-size []
-  2)
+  (lookup :alert-thread-pool-size))
 
 (defn log []
-  {:root                     "/var/log/wonko"
-   :thread-count             1
-   :thread-prefix            "Wonko-Log-"
-   :filename-prefix          "wonko"
-   :default-context          "wonko::"
-   :rotate-every-minute      120
-   :max-msg                  10000
-   :max-unflushed            10000
-   :max-elapsed-unflushed-ms 3000
-   :queue-timeout-ms         1000})
+  (lookup :log))
