@@ -12,14 +12,14 @@
             [kits.logging.log-async :as log]))
 
 (defn process [topic event]
-  (alert/pager-duty (config/pager-duty) topic event)
+  (alert/pager-duty (config/lookup :pager-duty) topic event)
   (prometheus/register-event topic event))
 
 (defn start []
-  (log/start-thread-pool! (config/log))
-  (alert/init! (config/alert-thread-pool-size))
-  (consume/init! (config/consumer))
-  (consume/start-consuming-topics (config/topic-streams) process))
+  (log/start-thread-pool! (config/lookup :log))
+  (alert/init! (config/lookup :alert-thread-pool-size))
+  (consume/init! (config/lookup :kafka :consumer))
+  (consume/start-consuming-topics (config/lookup :kafka :topic-streams) process))
 
 (defn stop [thread-pool]
   (alert/deinit!)
