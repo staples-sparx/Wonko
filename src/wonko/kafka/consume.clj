@@ -23,15 +23,15 @@
                    :error-message (.getMessage e)
                    :error-trace (map str (.getStackTrace e))})))))
 
-(defn consume-a-stream [topic stream process-fn]
-  (log/info  {:ns :consume :msg "starting to consume a stream" :topic topic})
+(defn consume-a-stream [stream process-fn]
+  (log/info  {:ns :consume :msg "starting to consume a stream"})
   (let [^ConsumerIterator it (.iterator ^KafkaStream stream)]
     (log/debug {:ns :consume :msg (str "Does the stream have more items? " (.hasNext it))})
     (loop []
       (when (.hasNext it)
         (let [event (parse (.next it))]
           (log/debug {:ns :consume :msg (str "processing " event)})
-          (try (process-fn topic event)
+          (try (process-fn event)
                (catch Exception e
                  (log/warn {:ns :consume :msg "Unable to process an event from kafka"
                             :kafka-event event
@@ -39,15 +39,15 @@
                             :error-trace (map str (.getStackTrace e))})))))
       (recur))))
 
-(defn start-consuming-topics [topic-stream-config process-fn]
+(defn start [topic-stream-config process-fn]
   (let [thread-pool (utils/create-thread-pool (apply + (vals topic-stream-config)))
-        all-topic-streams (kc/create-message-streams @consumer topic-stream-config)
-        jobs (doall (for [[topic streams] all-topic-streams
+        topic->streams (kc/create-message-streams @consumer topic-stream-config)
+        jobs (doall (for [[topic streams] topic->streams
                           stream streams]
-                      (.submit thread-pool #(consume-a-stream topic stream process-fn))))]
+                      (.submit thread-pool #(consume-a-stream stream process-fn))))]
     thread-pool))
 
-(defn stop-consuming-topics [thread-pool]
+(defn stop [thread-pool]
   (kc/shutdown @consumer)
   (.shutdownNow thread-pool))
 

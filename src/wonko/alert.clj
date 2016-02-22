@@ -4,7 +4,7 @@
             [wonko.utils :as utils]
             [kits.logging.log-async :as log]))
 
-(def thread-pool
+(defonce thread-pool
   (atom nil))
 
 (defn deinit! []
@@ -16,15 +16,15 @@
 (defn send-alert? [event]
   (get-in event [:options :alert]))
 
-(defn alert-info [topic event]
+(defn alert-info [event]
   {:description (:metric-name event)
-   :details (assoc event :topic topic)})
+   :details event})
 
-(defn send-alert [{:keys [api-endpoint api-key] :as config} topic event]
+(defn send-alert [{:keys [api-endpoint api-key] :as config} event]
   (try
     (let [body (merge {:service_key api-key
                        :event_type "trigger"}
-                      (alert-info topic event))]
+                      (alert-info event))]
       (http/post api-endpoint
                  {:content-type :json
                   :body (json/encode body)
@@ -37,6 +37,6 @@
                  :error-trace (map str (.getStackTrace e))})
       false)))
 
-(defn pager-duty [config topic event]
+(defn pager-duty [config event]
   (when (send-alert? event)
-    (.submit @thread-pool #(send-alert config topic event))))
+    (.submit @thread-pool #(send-alert config event))))

@@ -10,8 +10,8 @@
 (defonce ^:private web-server (atom nil))
 
 (cc/defroutes wonko-routes
-  (cc/GET "/krikkit/metrics" []
-          (prometheus/metrics-endpoint "krikkit"))
+  (cc/GET "/:service/metrics" [service]
+          (prometheus/metrics-endpoint service))
   (route/not-found "Not Found"))
 
 (def wonko-site

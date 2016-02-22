@@ -1,29 +1,31 @@
 (ns wonko.core
-  (:require [clojure.tools.cli :as cli]
-            [cider.nrepl :as cider]
+  (:require [cider.nrepl :as cider]
+            [clojure.tools.cli :as cli]
             [clojure.tools.nrepl.server :as nrepl]
+            [kits.logging.log-async :as log]
             [refactor-nrepl.middleware :as refactor-nrepl]
-            [wonko.config :as config]
-            [wonko.kafka.admin :as admin]
             [wonko.alert :as alert]
+            [wonko.config :as config]
+            [wonko.event-source :as event-source]
             [wonko.export.prometheus :as prometheus]
             [wonko.kafka.consume :as consume]
-            [wonko.event-source :as event-source]
-            [kits.logging.log-async :as log]))
+            [wonko.web-server :as web-server]))
 
-(defn process [topic event]
-  (alert/pager-duty (config/lookup :pager-duty) topic event)
-  (prometheus/register-event topic event))
+(defn process [event]
+  (alert/pager-duty (config/lookup :pager-duty) event)
+  (prometheus/register-event event))
 
 (defn start []
   (log/start-thread-pool! (config/lookup :log))
   (alert/init! (config/lookup :alert-thread-pool-size))
   (consume/init! (config/lookup :kafka :consumer))
-  (consume/start-consuming-topics (config/lookup :kafka :topic-streams) process))
+  (consume/start (config/lookup :kafka :topic-streams) process)
+  (web-server/start))
 
 (defn stop [thread-pool]
   (alert/deinit!)
-  (consume/stop-consuming-topics thread-pool))
+  (consume/stop thread-pool)
+  (web-server/stop))
 
 (defn- start-nrepl! [port]
   (nrepl/start-server
