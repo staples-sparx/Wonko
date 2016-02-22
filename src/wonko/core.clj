@@ -19,8 +19,8 @@
   (log/start-thread-pool! (config/lookup :log))
   (alert/init! (config/lookup :alert-thread-pool-size))
   (consume/init! (config/lookup :kafka :consumer))
-  (consume/start (config/lookup :kafka :topic-streams) process)
-  (web-server/start))
+  (web-server/start)
+  (consume/start (config/lookup :kafka :topic-streams) process))
 
 (defn stop [thread-pool]
   (alert/deinit!)
