@@ -10,7 +10,8 @@
          :topic-streams {"wonko-events" 2}}
 
  :pager-duty {:api-endpoint "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
-              :api-key "4bbd297e0f7e43cc948f7894b7d8ec7b"}
+              :api-keys {"krikkit" "4bbd297e0f7e43cc948f7894b7d8ec7b"
+                         "eccentrica" "4bbd297e0f7e43cc948f7894b7d8ec7b"}}
 
  :alert-thread-pool-size 2
 

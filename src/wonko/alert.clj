@@ -20,7 +20,7 @@
   {:description (:metric-name event)
    :details event})
 
-(defn send-alert [{:keys [api-endpoint api-key] :as config} event]
+(defn send-alert [api-endpoint api-key event]
   (try
     (let [body (merge {:service_key api-key
                        :event_type "trigger"}
@@ -39,4 +39,8 @@
 
 (defn pager-duty [config event]
   (when (send-alert? event)
-    (.submit @thread-pool #(send-alert config event))))
+    (let [api-endpoint (:api-endpoint config)
+          api-key (get-in config [:api-keys (:service event)])]
+      (if api-key
+        (.submit @thread-pool #(send-alert api-endpoint api-key event))
+        (log/info {:ns :alert :msg "Pagerduty not configured for service" :service (:service event)})))))

@@ -35,13 +35,13 @@
   (client/gauge :skus-job-stats {:type :errors} 107 :alert true))
 
 (defn create-topic-and-gen-events [topic service-name]
-      ;; create topic
-      (admin/create-topic topic)
-      (client/init! service-name kafka-config)
-      (client-kp/change-topic! topic)
+  ;; create topic
+  (admin/create-topic topic)
+  (client/init! service-name kafka-config)
+  (client-kp/change-topic! topic)
 
-      ;; produce
-      (gen-events))
+  ;; produce
+  (gen-events))
 
 (deftest test-production-and-consumption
   (testing "that production and consumption of counters and gauges works"
@@ -62,14 +62,21 @@
 
 (deftest test-alerts
   (testing "that alerts work"
-    (let [topic (tu/rand-topic-name)]
-      (create-topic-and-gen-events topic "wonko-test-service")
-      (let [alert-requests (atom [])]
+    (let [topic (tu/rand-topic-name)
+          service-name "wonko-test-service"]
+      (create-topic-and-gen-events topic service-name)
+      (let [alert-requests (atom [])
+            alert-config (assoc-in (config/lookup :pager-duty)
+                                   [:api-keys service-name]
+                                   "test-api-key")
+            process-fn (fn [event]
+                         (alert/pager-duty alert-config event)
+                         (prometheus/register-event event))]
         (with-redefs [clj-http.client/post
                       (fn [url req]
                         (swap! alert-requests conj req)
                         {:status 200 :headers {} :body ""})]
-          (let [thread-pool (consume/start {topic 1} process)]
+          (let [thread-pool (consume/start {topic 1} process-fn)]
             (tu/wait-for #(= 2 (count @alert-requests)) :interval 1 :timeout 10)
             (is (= (count @alert-requests) 2))
             (consume/stop thread-pool)))))))
