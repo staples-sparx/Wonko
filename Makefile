@@ -38,7 +38,16 @@ force-config-edn:
 resources/config.edn: resources/config.edn.dev
 	cp $< $@
 
+start-ci-services:
+	./bin/deps start zookeeper &
+	./bin/deps start kafka &
+
+stop-ci-services:
+	./bin/deps stop zookeeper || true
+	./bin/deps stop kafka || true
+
 ci: distclean force-config-edn
+	make start-ci-services
 	make tests
 
 tests: download-lein-libs
