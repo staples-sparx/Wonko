@@ -39,11 +39,7 @@
       (client/counter :defensive/compute {:status :done})
       (client/counter :cogs/job {:status :feed-unavailable})
 
-
       (client/alert :s3-down {:msg "Couldn't reach S3 for something."})
-
-      ;; events of this form are not supported currently
-      ;; (client/gauge :cogs-job-stats {:successes 107 :errors 3 :exec-time 42})
 
       (client/gauge :cogs-job-stats {:type :success} 107)
       (client/gauge :cogs-job-stats {:type :errors} 107)

@@ -14,11 +14,11 @@
   (reset! thread-pool (utils/create-thread-pool thread-pool-size)))
 
 (defn send-alert? [event]
-  (get-in event [:options :alert]))
+  (boolean (get-in event [:alert-name])))
 
 (defn alert-info [event]
-  {:description (:metric-name event)
-   :details event})
+  {:description (:alert-name event)
+   :details (:alert-info event)})
 
 (defn send-alert [api-endpoint api-key event]
   (try
