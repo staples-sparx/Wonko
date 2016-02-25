@@ -12,8 +12,7 @@
 (defn ->prometheus-name [metric-name]
   (-> metric-name
       name
-      (s/replace #"-" "_")
-      (s/replace #"/" "_")))
+      (s/replace #"[-/ ]" "_")))
 
 (defn maybe-set-label-names [metric label-names]
   (if (seq label-names)
