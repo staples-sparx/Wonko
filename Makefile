@@ -1,4 +1,4 @@
-.PHONY:	env tests
+.PHONY:	env tests log-dirs
 
 ARCHIVA_USERNAME = $(shell grep access_key ~/.s3cfg | head -n1 | awk -F ' = ' '{print $$2 }')
 ARCHIVA_PASSPHRASE = $(shell grep secret_key ~/.s3cfg | head -n1 | awk -F ' = ' '{print $$2}')
@@ -46,7 +46,7 @@ stop-ci-services:
 	./bin/deps stop zookeeper || true
 	./bin/deps stop kafka || true
 
-ci: distclean force-config-edn
+ci: distclean force-config-edn log-dirs
 	make start-ci-services
 	make tests
 
