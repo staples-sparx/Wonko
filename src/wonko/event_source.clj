@@ -37,7 +37,10 @@
       (client/counter :found-sku-with-negative-min-value nil)
       (client/counter :defensive/compute {:status :start})
       (client/counter :defensive/compute {:status :done})
-      (client/counter :cogs/job {:status :feed-unavailable} :alert true)
+      (client/counter :cogs/job {:status :feed-unavailable})
+
+
+      (client/alert :s3-down {:msg "Couldn't reach S3 for something."})
 
       ;; events of this form are not supported currently
       ;; (client/gauge :cogs-job-stats {:successes 107 :errors 3 :exec-time 42})
@@ -57,4 +60,4 @@
       (client/counter :get-user-token {:status 400})
       (client/gauge :get-buckets-exec-time {:status 200} 10)
       (client/gauge :get-user-token-exec-time {:status 200} 15)
-      (client/counter :no-current-experiment {} :alert true))))
+      (client/counter :no-current-experiment {}))))
