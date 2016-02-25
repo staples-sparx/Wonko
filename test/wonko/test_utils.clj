@@ -22,9 +22,9 @@
           (if (< (System/currentTimeMillis) end-time)
             (recur)))))))
 
-(defn rand-topic-name []
+(defn rand-str [prefix]
   (->> (.nextInt (java.util.concurrent.ThreadLocalRandom/current) 0 999999)
-       (str "test-topic-")))
+       (str prefix "-")))
 
 
 (defn prometheus-registry->map [registry]

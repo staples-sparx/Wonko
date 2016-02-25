@@ -43,7 +43,7 @@
           label-values (get-label-values properties)]
       (register/metric metric (assoc event :label-values label-values)))
     (catch Exception e
-      (log/info {:msg "unable to register event in prometheus"}))))
+      (log/info {:msg "unable to register event in prometheus" :event event}))))
 
 (defn metrics-endpoint [service]
   (let [registry (get-in @created-metrics [service :registry])

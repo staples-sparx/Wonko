@@ -28,43 +28,49 @@
 (defn gen-events []
   (client/counter :found-sku-with-negative-min-value nil)
   (client/counter :defensive/compute {:status :start})
-  (client/counter :cogs/job {:status :feed-unavailable} :alert true)
+  (client/counter :cogs/job {:status :feed-unavailable})
+
+  (client/alert :cogs-feed-unavailable {:msg "do something about this fast."})
 
   (client/gauge :current-temperature nil 107)
   (client/gauge :cogs-job-stats {:type :success} 107)
-  (client/gauge :skus-job-stats {:type :errors} 107 :alert true))
+  (client/gauge :skus-job-stats {:type :errors} 107))
 
-(defn create-topic-and-gen-events [topic service-name]
-  ;; create topic
-  (admin/create-topic topic)
-  (client/init! service-name kafka-config)
-  (client-kp/change-topic! topic)
-
-  ;; produce
-  (gen-events))
+(defn create-topics-and-gen-events [service-name]
+  (let [events-topic (tu/rand-str "test-events")
+        alerts-topic (tu/rand-str "test-alerts")]
+    ;; create topic
+    (admin/create-topic events-topic)
+    (admin/create-topic alerts-topic)
+    (client/init! service-name kafka-config)
+    (client/set-topics! events-topic alerts-topic)
+    ;; produce
+    (gen-events)
+    [events-topic alerts-topic]))
 
 (deftest test-production-and-consumption
   (testing "that production and consumption of counters and gauges works"
-    (let [topic (tu/rand-topic-name)]
-      (create-topic-and-gen-events topic "wonko-test-service")
-      (let [consumed-events (atom [])
-            thread-pool (consume/start {topic 1} #(swap! consumed-events conj %))]
-        (tu/wait-for #(= 6 (count @consumed-events)) :interval 1 :timeout 3)
-        (is (= (count @consumed-events) 6))
-        (is (= #{:found-sku-with-negative-min-value
-                 :defensive/compute
-                 :cogs/job
-                 :current-temperature
-                 :cogs-job-stats
-                 :skus-job-stats}
-               (set (map keyword (map :metric-name @consumed-events)))))
-        (consume/stop thread-pool)))))
+    (let [[e-topic a-topic] (create-topics-and-gen-events "wonko-test-service")
+          consumed-events (atom [])
+          thread-pool (consume/start {e-topic 1 a-topic 1} #(swap! consumed-events conj %))]
+      (tu/wait-for #(= 7 (count @consumed-events)) :interval 1 :timeout 3)
+      (is (= (count @consumed-events) 7))
+      (is (= #{:found-sku-with-negative-min-value
+               :defensive/compute
+               :cogs/job
+               :cogs-feed-unavailable
+               :current-temperature
+               :cogs-job-stats
+               :skus-job-stats}
+             (set (map keyword (map :metric-name @consumed-events)))))
+      (consume/stop thread-pool)
+      (admin/delete-topic e-topic)
+      (admin/delete-topic a-topic))))
 
 (deftest test-alerts
   (testing "that alerts work"
-    (let [topic (tu/rand-topic-name)
-          service-name "wonko-test-service"]
-      (create-topic-and-gen-events topic service-name)
+    (let [service-name "wonko-test-service"
+          [e-topic a-topic] (create-topics-and-gen-events service-name)]
       (let [alert-requests (atom [])
             alert-config (assoc-in (config/lookup :pager-duty)
                                    [:api-keys service-name]
@@ -76,29 +82,34 @@
                       (fn [url req]
                         (swap! alert-requests conj req)
                         {:status 200 :headers {} :body ""})]
-          (let [thread-pool (consume/start {topic 1} process-fn)]
+          (let [thread-pool (consume/start {e-topic 1 a-topic 1} process-fn)]
             (tu/wait-for #(= 2 (count @alert-requests)) :interval 1 :timeout 10)
-            (is (= (count @alert-requests) 2))
-            (consume/stop thread-pool)))))))
+            (is (= (count @alert-requests) 1))
+            (consume/stop thread-pool)
+            (admin/delete-topic e-topic)
+            (admin/delete-topic a-topic)))))))
 
 (deftest test-prometheus-export
   (testing "that prometheus export works"
-    (let [topic (tu/rand-topic-name)
-          service-name "wonko-test-export-service"]
-      (create-topic-and-gen-events topic "wonko-test-export-service")
+    (let [service-name "wonko-test-export-service"
+          [e-topic a-topic] (create-topics-and-gen-events service-name)]
       (let [consumed-events (atom [])
-            thread-pool (consume/start {topic 1} (fn [event]
-                                                   (process event)
-                                                   (swap! consumed-events conj event)))]
-        (tu/wait-for #(= 6 (count @consumed-events)) :interval 1 :timeout 3)
-        (is (= (count @consumed-events) 6))
+            thread-pool (consume/start {e-topic 1 a-topic 1}
+                                       (fn [event]
+                                         (process event)
+                                         (swap! consumed-events conj event)))]
+        (tu/wait-for #(= 7 (count @consumed-events)) :interval 1 :timeout 3)
+        (is (= (count @consumed-events) 7))
         (is (= {"defensive_compute" 1.0
                 "found_sku_with_negative_min_value" 1.0
                 "current_temperature" 107.0
                 "cogs_job" 1.0
                 "skus_job_stats" 107.0
-                "cogs_job_stats" 107.0}
+                "cogs_job_stats" 107.0
+                "cogs_feed_unavailable" 1.0}
                (->> [service-name :registry]
                     (get-in @prometheus/created-metrics)
                     tu/prometheus-registry->map)))
-        (consume/stop thread-pool)))))
+        (consume/stop thread-pool)
+        (admin/delete-topic e-topic)
+        (admin/delete-topic a-topic)))))
