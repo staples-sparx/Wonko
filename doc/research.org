@@ -218,3 +218,23 @@ node_exporter written in go and make it generic.
    insufficient to track down the root cause of the issue. Should we
    support an :alert-info in the optional map where arbitrary details
    regarding the alert can be sent in?
+** trying sigmund on linux
+wonko-client
+- linux - works - uses /lib, no exception
+- mac - partially works - doesn't use /lib, throws a sigar exception
+
+through wonko, lein repl
+- linux - ?
+- mac - partially works - doesn't use /lib, throws a sigar exception
+
+through wonko, svc
+
+questions:
+- using the dylib provided in /lib might help fix the sigar exception
+- how does the lib path get overridden on a mac
+
+
+wonko-client with the native lein structure
+- linux - dot not work
+- mac - works - does not use native dylib added to the native folder
+      - also works from wonko repl
