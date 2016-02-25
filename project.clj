@@ -21,7 +21,7 @@
                  [refactor-nrepl "2.2.0-SNAPSHOT"]
                  [ring/ring-core "1.4.0"]
                  [ring/ring-jetty-adapter "1.4.0"]
-                 [staples-sparx/wonko-client "0.1.1-SNAPSHOT"]]
+                 [staples-sparx/wonko-client "0.1.0"]]
   :main ^:skip-aot wonko.core
   :plugins [[s3-wagon-private "1.2.0"]]
   :target-path "target/%s"
