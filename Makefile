@@ -1,4 +1,4 @@
-.PHONY:	env tests log-dirs
+.PHONY:	env tests log-dirs ci ci-clean
 
 ARCHIVA_USERNAME = $(shell grep access_key ~/.s3cfg | head -n1 | awk -F ' = ' '{print $$2 }')
 ARCHIVA_PASSPHRASE = $(shell grep secret_key ~/.s3cfg | head -n1 | awk -F ' = ' '{print $$2}')
@@ -39,17 +39,28 @@ resources/config.edn: resources/config.edn.dev
 	cp $< $@
 
 start-ci-services: deps
-	./bin/deps start zookeeper &
-	./bin/deps start kafka &
+	./bin/deps start zookeeper
+	./bin/deps start kafka
 
 stop-ci-services:
-	./bin/deps stop zookeeper || true
-	./bin/deps stop kafka || true
+	-./bin/deps stop kafka
+	-./bin/deps stop zookeeper
 
 ci: distclean force-config-edn log-dirs
 	make start-ci-services
 	make tests
-	make stop-ci-services
+
+# FIXME
+# (Probably) because of an ungraceful exit, kafka would
+# encounter a conflict (INFO conflict in /brokers/ids/0 data)
+# and refuse to boot on alternate runs. A quick fix is to zap
+# zookeeper and kafka's data directories after every run, but
+# this should be fixed to get at the real issue (probably making
+# the exit more graceful).
+ci-clean:
+	-make stop-ci-services
+	-rm -rf /tmp/kafka-logs
+	-rm -rf /tmp/zookeeper
 
 tests: download-lein-libs
 	$(LEIN_ENV) $(LEIN) test
