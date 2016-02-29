@@ -12,7 +12,7 @@
           thread-pool (Executors/newFixedThreadPool 10)
           process-fn #(swap! registries conj (sut/get-or-create-registry "registry-test-service"))]
 
-      (doall (for [i (range 99999)] (.submit thread-pool ^Runnable process-fn)))
+      (dorun (for [i (range 99999)] (.submit thread-pool ^Runnable process-fn)))
       (.shutdown thread-pool)
       (.awaitTermination thread-pool Integer/MAX_VALUE TimeUnit/MILLISECONDS)
 
@@ -25,7 +25,7 @@
           metric-attrs {:metric-name "metric" :metric-type "counter"}
           process-fn #(swap! metrics conj (sut/get-or-create-metric registry metric-attrs))]
 
-      (doall (for [i (range 99999)] (.submit thread-pool ^Runnable process-fn)))
+      (dorun (for [i (range 99999)] (.submit thread-pool ^Runnable process-fn)))
       (.shutdown thread-pool)
       (.awaitTermination thread-pool Integer/MAX_VALUE TimeUnit/MILLISECONDS)
 
