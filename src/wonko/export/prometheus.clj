@@ -43,16 +43,13 @@
 (defn register-event [{:keys [service metric-value properties] :as event}]
   ;; FIXME: This is a broad fix to make this function thread-safe. We should
   ;; understand the problem better and apply the fix in a more localized way.
-  (.lock lock)
   (try
     (let [registry (get-or-create-registry service)
           metric (get-or-create-metric registry event)
           label-values (get-label-values properties)]
       (register/metric metric (assoc event :label-values label-values)))
     (catch Exception e
-      (log/info {:msg "unable to register event in prometheus" :event event}))
-    (finally
-      (.unlock lock))))
+      (log/info {:msg "unable to register event in prometheus" :event event}))))
 
 (defn metrics-endpoint [service]
   (let [registry (get-in @created-metrics [service :registry])
