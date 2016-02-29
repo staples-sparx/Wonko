@@ -12,6 +12,16 @@
       (maybe-set-label-values label-values)
       (.observe (double metric-value))))
 
+(defn summary [metric label-values metric-value]
+  (-> metric
+      (maybe-set-label-values label-values)
+      (.observe (double metric-value))))
+
+(defn stream [metric label-values metric-value]
+  (-> metric
+      (maybe-set-label-values label-values)
+      (.observe (double metric-value))))
+
 (defn gauge [metric label-values metric-value]
   (-> metric
       (maybe-set-label-values label-values)
@@ -22,7 +32,12 @@
       (maybe-set-label-values label-values)
       .inc))
 
+(defn stream [metric label-values metric-value]
+  {"histogram" (histogram (get metric "histogram") label-values metric-value)
+   "summary" (summary (get metric "summary") label-values metric-value)})
+
 (defn metric [metric {:keys [label-values metric-value metric-type] :as event}]
   (case metric-type
     "counter" (counter metric label-values)
-    "gauge" (gauge metric label-values metric-value)))
+    "gauge" (gauge metric label-values metric-value)
+    "stream" (stream metric label-values metric-value)))
