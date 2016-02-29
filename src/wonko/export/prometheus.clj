@@ -12,12 +12,18 @@
            java.util.concurrent.locks.ReentrantLock
            java.io.StringWriter))
 
-;; This contains prometheus created metrics in a map of the form:
-;; {:service {:metric-type {metric-name metric} :registry registry}}
-(defonce created-metrics
+
+(defonce
+  ^{:doc "This contains prometheus created metrics in a map of the form:
+          {:service {:metric-type {metric-name metric} :registry registry}}"}
+  created-metrics
   (atom {}))
 
-(defonce lock (ReentrantLock.))
+(defonce
+  ^{:doc "Used to regulate access to registry creation.
+          TODO: At some point we might need finer-grained locking,
+                but this seems adequate for now."}
+  lock (Object.))
 
 (defn get-label-names [properties]
   (sort (keys properties)))
@@ -26,27 +32,21 @@
   (map properties (get-label-names properties)))
 
 (defn get-or-create-metric [registry {:keys [service metric-name metric-type properties] :as event}]
-  (try
-    (.lock lock)
+  (locking registry
     (let [metric-path [service (keyword metric-type) metric-name]
           label-names (get-label-names properties)]
       (or (get-in @created-metrics metric-path)
           (let [created-metric (create/metric registry (assoc event :label-names label-names))]
             (swap! created-metrics assoc-in metric-path created-metric)
-            created-metric)))
-    (finally
-      (.unlock lock))))
+            created-metric)))))
 
 (defn get-or-create-registry [service]
-  (try
-    (.lock lock)
+  (locking lock
     (let [registry-path [service :registry]]
       (or (get-in @created-metrics registry-path)
           (let [created-registry (create/registry)]
             (swap! created-metrics assoc-in registry-path created-registry)
-            created-registry)))
-    (finally
-      (.unlock lock))))
+            created-registry)))))
 
 (defn register-event [{:keys [service metric-value properties] :as event}]
   ;; FIXME: This is a broad fix to make this function thread-safe. We should
