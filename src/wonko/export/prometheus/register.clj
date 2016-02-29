@@ -1,5 +1,6 @@
 (ns wonko.export.prometheus.register
-  (:require [clojure.string :as s])
+  (:require [clojure.string :as s]
+            [wonko.constants :as c])
   (:import [io.prometheus.client Gauge Counter Histogram]))
 
 (defn maybe-set-label-values [metric label-values]
@@ -33,11 +34,11 @@
       .inc))
 
 (defn stream [metric label-values metric-value]
-  {"histogram" (histogram (get metric "histogram") label-values metric-value)
-   "summary" (summary (get metric "summary") label-values metric-value)})
+  {c/histogram (histogram (get metric c/histogram) label-values metric-value)
+   c/summary (summary (get metric c/summary) label-values metric-value)})
 
 (defn metric [metric {:keys [label-values metric-value metric-type] :as event}]
   (case metric-type
-    "counter" (counter metric label-values)
-    "gauge" (gauge metric label-values metric-value)
-    "stream" (stream metric label-values metric-value)))
+    c/counter (counter metric label-values)
+    c/gauge (gauge metric label-values metric-value)
+    c/stream (stream metric label-values metric-value)))

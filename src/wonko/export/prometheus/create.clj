@@ -1,5 +1,6 @@
 (ns wonko.export.prometheus.create
-  (:require [clojure.string :as s])
+  (:require [clojure.string :as s]
+            [wonko.constants :as c])
   (:import [io.prometheus.client Gauge Counter Summary Histogram]
            [io.prometheus.client CollectorRegistry]))
 
@@ -48,14 +49,14 @@
       (.register registry)))
 
 (defn stream [registry metric-name help-text label-names]
-  (let [h-metric-name (str metric-name "-histogram")
-        s-metric-name (str metric-name "-summary")]
-    {"histogram" (histogram registry h-metric-name help-text label-names
+  (let [h-metric-name (str metric-name "-" c/histogram)
+        s-metric-name (str metric-name "-" c/summary)]
+    {c/histogram (histogram registry h-metric-name help-text label-names
                             {:width 1 :count 30})
-     "summary" (summary registry s-metric-name help-text label-names)}))
+     c/summary (summary registry s-metric-name help-text label-names)}))
 
 (defn metric [registry {:keys [metric-name metric-type label-names] :as event}]
   (case metric-type
-    "counter" (counter registry metric-name "help-text" label-names)
-    "gauge" (gauge registry metric-name "help-text" label-names)
-    "stream" (stream registry metric-name "help-text" label-names)))
+    c/counter (counter registry metric-name "help-text" label-names)
+    c/gauge (gauge registry metric-name "help-text" label-names)
+    c/stream (stream registry metric-name "help-text" label-names)))

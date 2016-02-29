@@ -5,8 +5,7 @@
             [wonko.export.prometheus.create :as create]
             [wonko.export.prometheus.register :as register]
             [wonko.test-utils :as tu])
-  (:import [io.prometheus.client CollectorRegistry Counter Gauge Histogram]
-           io.prometheus.client.exporter.common.TextFormat
+  (:import io.prometheus.client.exporter.common.TextFormat
            io.prometheus.client.hotspot.DefaultExports
            java.util.concurrent.locks.ReentrantLock
            java.io.StringWriter))
