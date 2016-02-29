@@ -26,12 +26,16 @@
   (map properties (get-label-names properties)))
 
 (defn get-or-create-metric [registry {:keys [service metric-name metric-type properties] :as event}]
-  (let [metric-path [service (keyword metric-type) metric-name]
-        label-names (get-label-names properties)]
-    (or (get-in @created-metrics metric-path)
-        (let [created-metric (create/metric registry (assoc event :label-names label-names))]
-          (swap! created-metrics assoc-in metric-path created-metric)
-          created-metric))))
+  (try
+    (.lock lock)
+    (let [metric-path [service (keyword metric-type) metric-name]
+          label-names (get-label-names properties)]
+      (or (get-in @created-metrics metric-path)
+          (let [created-metric (create/metric registry (assoc event :label-names label-names))]
+            (swap! created-metrics assoc-in metric-path created-metric)
+            created-metric)))
+    (finally
+      (.unlock lock))))
 
 (defn get-or-create-registry [service]
   (try
