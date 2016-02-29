@@ -34,11 +34,15 @@
           created-metric))))
 
 (defn get-or-create-registry [service]
-  (let [registry-path [service :registry]]
-    (or (get-in @created-metrics registry-path)
-        (let [created-registry (create/registry)]
-          (swap! created-metrics assoc-in registry-path created-registry)
-          created-registry))))
+  (try
+    (.lock lock)
+    (let [registry-path [service :registry]]
+      (or (get-in @created-metrics registry-path)
+          (let [created-registry (create/registry)]
+            (swap! created-metrics assoc-in registry-path created-registry)
+            created-registry)))
+    (finally
+      (.unlock lock))))
 
 (defn register-event [{:keys [service metric-value properties] :as event}]
   ;; FIXME: This is a broad fix to make this function thread-safe. We should
