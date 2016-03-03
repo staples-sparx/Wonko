@@ -6,7 +6,7 @@
                                   :username [:gpg :env/archiva_username]
                                   :passphrase [:gpg :env/archiva_passphrase]}}
   :dependencies [[cheshire "5.5.0"]
-                 [cider/cider-nrepl "0.10.2"]
+                 [cider/cider-nrepl "0.11.0-SNAPSHOT"]
                  [clj-http "2.0.0"]
                  [clj-kafka "0.3.4"]
                  [compojure "1.4.0"]
