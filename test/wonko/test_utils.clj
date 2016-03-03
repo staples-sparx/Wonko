@@ -33,7 +33,6 @@
   (->> (.nextInt (java.util.concurrent.ThreadLocalRandom/current) 0 999999)
        (str prefix "-")))
 
-
 (defn prometheus-registry->map [registry]
   (->> registry
        .metricFamilySamples
@@ -42,6 +41,20 @@
        (map first)
        (map (fn [i] [(.name i) (.value i)]))
        (into {})))
+
+(defn metric-samples [histogram]
+  (for [sample (.-samples (first (.collect histogram)))]
+    {:label-names (.labelNames sample)
+     :label-values (.labelValues sample)
+     :name (.name sample)
+     :value (.value sample)}))
+
+(defn find-metric-sample [histogram metric-name]
+  (->> histogram
+       metric-samples
+       (filter #(= metric-name (:name %)))
+       first))
+
 (defn init-client [service-name events-topic alerts-topic]
   (client/init! service-name test-kafka-config)
   (client/set-topics! events-topic alerts-topic))
