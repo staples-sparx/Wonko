@@ -38,7 +38,7 @@
    c/summary (summary (get metric c/summary) label-values metric-value)})
 
 (defn metric [metric {:keys [label-values metric-value metric-type] :as event}]
-  (case metric-type
+  (condp = metric-type
     c/counter (counter metric label-values)
     c/gauge (gauge metric label-values metric-value)
     c/stream (stream metric label-values metric-value)))

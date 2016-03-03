@@ -56,7 +56,7 @@
      c/summary (summary registry s-metric-name help-text label-names)}))
 
 (defn metric [registry {:keys [metric-name metric-type label-names] :as event}]
-  (case metric-type
+  (condp = metric-type
     c/counter (counter registry metric-name "help-text" label-names)
     c/gauge (gauge registry metric-name "help-text" label-names)
     c/stream (stream registry metric-name "help-text" label-names)))
