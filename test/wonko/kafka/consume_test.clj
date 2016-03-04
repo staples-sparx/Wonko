@@ -1,6 +1,6 @@
 (ns wonko.kafka.consume-test
   (:require [clojure.test :refer :all]
-            [wonko.kafka.consume :as sut]
+            [wonko.kafka.consume :as consume]
             [wonko.test-utils :as tu]
             [wonko-client.core :as client]
             [wonko.test-config :as tc]
@@ -11,12 +11,12 @@
 
 (deftest consumption-offset
   (testing "after a restart, don't start consuming from the beginning"
-    (sut/init! tc/zookeeper-config)
+    (consume/init! tc/zookeeper-config)
 
     (let [topic (tu/rand-str "offset-test")
           events (atom [])
           process-fn #(swap! events conj %)
-          thread-pool (sut/start {topic 1} process-fn)]
+          thread-pool (consume/start {topic 1} process-fn)]
 
       (admin/create-topic topic)
       (client/set-topics! topic topic)
@@ -31,12 +31,12 @@
       (is (= "first-metric" (-> @events first :metric-name)))
 
       ;; Restart
-      (sut/stop thread-pool)
-      (sut/init! tc/zookeeper-config)
+      (consume/stop thread-pool)
+      (consume/init! tc/zookeeper-config)
       (reset! events [])
 
       ;; Second Run
-      (let [thread-pool (sut/start {topic 1} process-fn)]
+      (let [thread-pool (consume/start {topic 1} process-fn)]
         (is (client/gauge :second-metric nil 5))
 
         (tu/wait-for #(= 1 (count @events)) :interval 0.5 :timeout 2)
@@ -45,4 +45,4 @@
         (is (= "gauge" (-> @events first :metric-type)))
         (is (= "second-metric" (-> @events first :metric-name)))
 
-        (sut/stop thread-pool)))))
+        (consume/stop thread-pool)))))
