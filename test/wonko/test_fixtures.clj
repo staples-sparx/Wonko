@@ -24,7 +24,7 @@
   (client/init! (tu/rand-str "test-service") tc/kafka-config)
   (test-fn))
 
-(defn init-consumption [test-fn]
+(defn with-initialized-consumption [test-fn]
   (log/start-thread-pool! (config/lookup :log))
   (alert/init! (config/lookup :alert-thread-pool-size))
   (consume/init! (config/lookup :kafka :consumer))

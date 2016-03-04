@@ -9,7 +9,7 @@
             [wonko.test-utils :as tu]
             [wonko.test-fixtures :as tf]))
 
-(use-fixtures :each tf/init-consumption)
+(use-fixtures :each tf/with-initialized-consumption)
 
 (defn gen-events [service-name events-topic alerts-topic]
   (tu/init-client service-name events-topic alerts-topic)

@@ -7,7 +7,7 @@
             [wonko.test-fixtures :as tf]
             [wonko.test-utils :as tu]))
 
-(use-fixtures :each tf/init-consumption)
+(use-fixtures :each tf/with-initialized-consumption)
 
 (deftest test-streams
   (testing "producing, consuming and exporting streams works"
