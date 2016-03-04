@@ -46,7 +46,7 @@ stop-ci-services:
 	-./bin/deps stop kafka
 	-./bin/deps stop zookeeper
 
-ci: distclean force-config-edn log-dirs
+ci: force-config-edn log-dirs
 	make start-ci-services
 	make tests
 
