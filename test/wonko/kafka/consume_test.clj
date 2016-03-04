@@ -43,4 +43,6 @@
         (is (= 1 (count @events)))
 
         (is (= "gauge" (-> @events first :metric-type)))
-        (is (= "second-metric" (-> @events first :metric-name)))))))
+        (is (= "second-metric" (-> @events first :metric-name)))
+
+        (sut/stop thread-pool)))))
