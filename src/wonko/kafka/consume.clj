@@ -14,12 +14,14 @@
   (reset! consumer (kc/consumer config)))
 
 (defn parse [msg]
-  (let [string-msg (-> (k/to-clojure msg) :value (#(String. %)))]
+  (let [offset (-> (k/to-clojure msg) :offset)
+        message (-> (k/to-clojure msg) :value (#(String. %)))]
     (try
-      (json/decode string-msg true)
+      {:message (json/decode message true) :offset offset}
       (catch JsonParseException e
         (log/warn {:ns :consume :msg "Couldn't parse message"
-                   :kafka-msg string-msg
+                   :kafka-msg message
+                   :kafka-offset offset
                    :error-message (.getMessage e)
                    :error-trace (map str (.getStackTrace e))})))))
 
@@ -31,7 +33,7 @@
       (when (.hasNext it)
         (let [event (parse (.next it))]
           (log/debug {:ns :consume :msg (str "processing " event)})
-          (try (process-fn event)
+          (try (process-fn (:message event))
                (catch Exception e
                  (log/warn {:ns :consume :msg "Unable to process an event from kafka"
                             :kafka-event event

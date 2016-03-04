@@ -7,7 +7,14 @@
          :consumer {"zookeeper.connect" "localhost:2182"
                     "group.id" "clj-kafka.consumer"
                     "auto.offset.reset" "smallest"
-                    "auto.commit.enable" "false"}
+
+                    ;; The `auto.commit' directives commit the last-read offset
+                    ;; to Zookeeper periodically (configured by `auto.commit.interval.ms').
+                    ;; If this was disabled, we would read from the beginning of the Kafka
+                    ;; topic _every_ restart. This approach might lead to duplicates if
+                    ;; Wonko crashes between commits.
+                    "auto.commit.enable" "true"
+                    "auto.commit.interval.ms" "1000"}
 
          :topic-streams {"wonko-events" 2
                          "wonko-alerts" 2}}
