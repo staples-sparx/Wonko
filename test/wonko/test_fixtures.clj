@@ -13,5 +13,8 @@
   (test-fn))
 
 (defn with-initialized-client
+  "Initialize `wonko-client'. Topics still need to be
+   set manually."
   [test-fn]
-  (client/init! (tu/rand-str "test-service") tc/kafka-config))
+  (client/init! (tu/rand-str "test-service") tc/kafka-config)
+  (test-fn))

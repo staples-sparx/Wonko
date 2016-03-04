@@ -4,7 +4,8 @@
             [wonko.test-utils :as tu]
             [wonko-client.core :as client]
             [wonko.test-config :as tc]
-            [wonko.test-fixtures :as tf]))
+            [wonko.test-fixtures :as tf]
+            [wonko.kafka.admin :as admin]))
 
 (use-fixtures :each tf/with-initialized-client)
 
@@ -17,15 +18,15 @@
           process-fn #(swap! events conj %)
           thread-pool (sut/start {topic 1} process-fn)]
 
+      (admin/create-topic topic)
       (client/set-topics! topic topic)
 
       ;; First Run
       (is (client/counter :first-metric nil))
 
-      (tu/wait-for #(= 1 (count @events)) :interval 0.5 :timeout 2)
+      (tu/wait-for #(= 1 (count @events)) :interval 0.5 :timeout 5)
       (is (= 1 (count @events)))
 
-      (is (= "offset-test-service" (-> @events first :service)))
       (is (= "counter" (-> @events first :metric-type)))
       (is (= "first-metric" (-> @events first :metric-name)))
 
@@ -41,6 +42,5 @@
         (tu/wait-for #(= 1 (count @events)) :interval 0.5 :timeout 2)
         (is (= 1 (count @events)))
 
-        (is (= "offset-test-service" (-> @events first :service)))
         (is (= "gauge" (-> @events first :metric-type)))
         (is (= "second-metric" (-> @events first :metric-name)))))))
