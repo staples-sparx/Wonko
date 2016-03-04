@@ -41,9 +41,12 @@
 
       (client/alert :s3-down {:msg "Couldn't reach S3 for something."})
 
-      (client/gauge :cogs-job-stats {:type :success} 107)
-      (client/gauge :cogs-job-stats {:type :errors} 107)
-      (client/gauge :cogs-job-stats {:type :exec-time} 107))))
+      (client/gauge :cogs-job-stats {:type :success} (rand-int 500))
+      (client/gauge :cogs-job-stats {:type :errors} (rand-int 500))
+      (client/gauge :cogs-job-stats {:type :exec-time} (rand-int 500))
+
+      (client/stream :feed-length {:feed :cogs} (rand-int 1000))
+      (client/stream :feed-length {:feed :sku} (rand-int 1000)))))
 
 (defn eccentrica []
   (client/init! "eccentrica" kafka-config)

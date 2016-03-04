@@ -2,16 +2,13 @@
   (:require [clojure.string :as s]
             [kits.logging.log-async :as log]
             [ring.util.response :as res]
-            [wonko.export.prometheus
-             [create :as create]
-             [register :as register]]
+            [wonko.export.prometheus.create :as create]
+            [wonko.export.prometheus.register :as register]
             [wonko.test-utils :as tu])
-  (:import [io.prometheus.client CollectorRegistry Counter Gauge Histogram]
-           io.prometheus.client.exporter.common.TextFormat
+  (:import io.prometheus.client.exporter.common.TextFormat
            io.prometheus.client.hotspot.DefaultExports
            java.util.concurrent.locks.ReentrantLock
            java.io.StringWriter))
-
 
 (defonce
   ^{:doc "This contains prometheus created metrics in a map of the form:
@@ -49,15 +46,15 @@
             created-registry)))))
 
 (defn register-event [{:keys [service metric-value properties] :as event}]
-  ;; FIXME: This is a broad fix to make this function thread-safe. We should
-  ;; understand the problem better and apply the fix in a more localized way.
   (try
     (let [registry (get-or-create-registry service)
           metric (get-or-create-metric registry event)
           label-values (get-label-values properties)]
       (register/metric metric (assoc event :label-values label-values)))
     (catch Exception e
-      (log/info {:msg "unable to register event in prometheus" :event event}))))
+      (log/info {:msg "unable to register event in prometheus"
+                 :event event
+                 :exception (bean e)}))))
 
 (defn metrics-endpoint [service]
   (let [registry (get-in @created-metrics [service :registry])
