@@ -14,6 +14,6 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.provision "shell", inline: <<-SHELL
-    su - vagrant -c "cd /home/vagrant/Wonko && bash bin/setup.sh"
+    su - vagrant -c "cd /home/vagrant/work/stapleslabs/Wonko && bash bin/setup.sh"
   SHELL
 end
