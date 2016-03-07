@@ -17,3 +17,4 @@ pom.xml.asc
 wonko.log
 .m2
 resources/config.edn
+.DS_Store
