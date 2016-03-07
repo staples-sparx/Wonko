@@ -6,6 +6,17 @@
 
 (use-fixtures :each tf/with-cleared-prometheus-state)
 
+(deftest label-names
+  (testing "an exception is thrown when label names are changed for a metric"
+    (let [registry (sut/get-or-create-registry "label-names-test-service")]
+      (sut/register-event {:service "label-names-test-service" :metric-name "metric" :metric-type "counter"
+                           :properties {:foo "bar"}})
+
+      (is (thrown-with-msg?
+           IllegalArgumentException #"Incorrect number of labels"
+           (sut/register-event {:service "label-names-test-service" :metric-name "metric" :metric-type "counter"
+                                :properties {:foo "bar" :baz "quux"}}))))))
+
 (deftest thread-safety
   (testing "get-or-create-registry is thread-safe"
     (let [registries (atom #{})

@@ -54,7 +54,8 @@
     (catch Exception e
       (log/info {:msg "unable to register event in prometheus"
                  :event event
-                 :exception (bean e)}))))
+                 :exception (bean e)})
+      (throw e))))
 
 (defn metrics-endpoint [service]
   (let [registry (get-in @created-metrics [service :registry])
