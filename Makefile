@@ -1,4 +1,4 @@
-.PHONY:	env tests log-dirs ci ci-clean
+.PHONY:	env tests log-dirs ci ci-clean deps
 
 ARCHIVA_USERNAME = $(shell grep access_key ~/.s3cfg | head -n1 | awk -F ' = ' '{print $$2 }')
 ARCHIVA_PASSPHRASE = $(shell grep secret_key ~/.s3cfg | head -n1 | awk -F ' = ' '{print $$2}')
@@ -46,7 +46,7 @@ stop-ci-services:
 	-./bin/deps stop kafka
 	-./bin/deps stop zookeeper
 
-ci: force-config-edn log-dirs
+ci: force-config-edn log-dirs checkouts/wonko-client
 	make start-ci-services
 	make tests
 
@@ -61,6 +61,7 @@ ci-clean:
 	-make stop-ci-services
 	-rm -rf /tmp/kafka-logs
 	-rm -rf /tmp/zookeeper
+	-rm -rf ../wonko-client
 
 tests: download-lein-libs
 	$(LEIN_ENV) $(LEIN) test
@@ -83,8 +84,5 @@ log-dirs: /var/log/wonko
 checkouts:
 	mkdir checkouts
 
-../wonko-client:
-	git clone git@github.com:StaplesLabs/wonko-client.git ../wonko-client
-
-checkouts/wonko-client: ../wonko-client checkouts
+checkouts/wonko-client: deps checkouts
 	ln -fs ../../wonko-client $@
