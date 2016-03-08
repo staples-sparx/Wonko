@@ -61,6 +61,7 @@ ci-clean:
 	-make stop-ci-services
 	-rm -rf /tmp/kafka-logs
 	-rm -rf /tmp/zookeeper
+	-rm -rf ../wonko-client
 
 tests: download-lein-libs
 	$(LEIN_ENV) $(LEIN) test
