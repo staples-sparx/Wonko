@@ -1,4 +1,4 @@
-.PHONY:	env tests log-dirs ci ci-clean
+.PHONY:	env tests log-dirs ci ci-clean deps
 
 ARCHIVA_USERNAME = $(shell grep access_key ~/.s3cfg | head -n1 | awk -F ' = ' '{print $$2 }')
 ARCHIVA_PASSPHRASE = $(shell grep secret_key ~/.s3cfg | head -n1 | awk -F ' = ' '{print $$2}')
@@ -83,8 +83,5 @@ log-dirs: /var/log/wonko
 checkouts:
 	mkdir checkouts
 
-../wonko-client:
-	git clone git@github.com:StaplesLabs/wonko-client.git ../wonko-client
-
-checkouts/wonko-client: ../wonko-client checkouts
+checkouts/wonko-client: deps checkouts
 	ln -fs ../../wonko-client $@
