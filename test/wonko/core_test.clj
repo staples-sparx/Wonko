@@ -108,16 +108,16 @@
       (client/stream :validation-metric {:first 5} 5)
       (is (thrown? IllegalArgumentException (client/stream :validation-metric {:first 6 :second 7} 6)))
 
-      (client/alert :validation-metric {:first 5})
-      (is (client/alert :validation-metric {:first 6 :second 7}))
+      (client/alert :some-alert {:first 5})
+      (is (client/alert :some-alert {:first 6 :second 7}))
 
       (let [consumed-events (atom [])
             thread-pool (consume/start {events-topic 1 alerts-topic 1}
                                        (fn [event]
                                          (process event)
                                          (swap! consumed-events conj event)))]
-        (tu/wait-for #(= 4 (count @consumed-events)) :interval 1 :timeout 3)
-        (is (= (count @consumed-events) 4))
+        (tu/wait-for #(= 5 (count @consumed-events)) :interval 1 :timeout 3)
+        (is (= (count @consumed-events) 5))
 
         (consume/stop thread-pool)
         (tu/delete-topics events-topic alerts-topic)))))
