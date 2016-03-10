@@ -1,9 +1,9 @@
 (ns wonko.web-server
-  (:require [wonko.config :as config]
-            [compojure.core :as cc]
-            [compojure.route :as route]
+  (:require [compojure.core :as cc]
             [compojure.handler :as handler]
+            [compojure.route :as route]
             [ring.adapter.jetty :as ring-jetty]
+            [wonko.config :as config]
             [wonko.export.prometheus :as prometheus])
   (:import [org.eclipse.jetty.server.handler StatisticsHandler]))
 
@@ -12,6 +12,8 @@
 (cc/defroutes wonko-routes
   (cc/GET "/:service/metrics" [service]
           (prometheus/metrics-endpoint service))
+  (cc/POST "/:service/clear-data" [service]
+           (prometheus/clear-service-data! (config/lookup :prometheus-endpoint) service))
   (route/not-found "Not Found"))
 
 (def wonko-site

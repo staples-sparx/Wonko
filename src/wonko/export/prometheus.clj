@@ -1,5 +1,6 @@
 (ns wonko.export.prometheus
   (:require [clojure.string :as s]
+            [clj-http.client :as http]
             [kits.logging.log-async :as log]
             [ring.util.response :as res]
             [wonko.export.prometheus.create :as create]
@@ -66,3 +67,11 @@
            :headers {"Content-Type" TextFormat/CONTENT_TYPE_004}
            :body    (.toString writer)})
       (res/not-found "Not found"))))
+
+(defn clear-service-data!
+  "Warning! This will remove all export related data for the given service.
+  Use this only in development or test environments."
+  [endpoint service]
+  (swap! created-metrics assoc service {})
+  (http/delete (format "http://%s/api/v1/series" endpoint)
+               {:query-params {"match[]" (format "{job=\"%s\"}" service)}}))
