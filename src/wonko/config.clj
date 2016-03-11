@@ -22,3 +22,6 @@
 
 (defn zookeeper []
   (lookup :kafka :consumer "zookeeper.connect"))
+
+(defn production-env? []
+  (= "production" (lookup :env)))

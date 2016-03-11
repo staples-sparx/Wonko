@@ -1,6 +1,8 @@
 ;; -*- Clojure -*-
 
-{:kafka {:new-topic {:partitions 1
+{:env "development"
+
+ :kafka {:new-topic {:partitions 1
                      :replication-factor 1
                      :config {"cleanup.policy" "compact"}}
 
@@ -24,6 +26,8 @@
                          "eccentrica" "4bbd297e0f7e43cc948f7894b7d8ec7b"}}
 
  :alert-thread-pool-size 2
+
+ :prometheus {:endpoint "localhost:9090"}
 
  :log {:root                     "/var/log/wonko"
        :thread-count             1
