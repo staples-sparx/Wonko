@@ -1,36 +1,17 @@
-# wonko
+# Wonko
 
-FIXME: description
+Monitoring and alerting service for all Staples SparX services.
 
-## Installation
+## Integration
 
-Download from http://example.com/FIXME.
+If you're looking to integrate your service with wonko, see https://github.com/StaplesLabs/wonko-client.
 
-## Usage
+## How does it work?
 
-FIXME: explanation
+- A service integrating with Wonko uses the wonko-client to send metrics to Wonko.
+- Wonko reads off designated topics `wonko-alerts` and `wonko-events` in the central kafka cluster.
+- It sends pager-duty alerts for events coming through `wonko-alerts`. Each service needs a configured pager-duty endpoint.
+- It creates prometheus objects for all metrics and exposes an endpoint per service for prometheus to poll.
+- Prometheus polling and alerting is configured independently, outside of wonko.
 
-    $ java -jar wonko-0.1.0-standalone.jar [args]
-
-## Options
-
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2016 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+![high-level-architecture.png](./doc/high-level-architecture.png)
