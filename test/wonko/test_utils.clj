@@ -56,7 +56,7 @@
        first))
 
 (defn init-client [service-name events-topic alerts-topic]
-  (client/init! service-name test-kafka-config)
+  (client/init! service-name test-kafka-config :validate? true)
   (client/set-topics! events-topic alerts-topic))
 
 (defn create-topics []
