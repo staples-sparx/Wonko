@@ -13,7 +13,7 @@
   (cc/GET "/:service/metrics" [service]
           (prometheus/metrics-endpoint service))
   (cc/POST "/:service/clear-data" [service]
-           (prometheus/clear-service-data! (config/lookup :prometheus-endpoint) service))
+           (prometheus/clear-service-data! (config/lookup :prometheus :endpoint) service))
   (route/not-found "Not Found"))
 
 (def wonko-site
