@@ -1,9 +1,50 @@
-* raw stats
-** env notes
+* conclusions
+- EP api calls are about 15% slower at the 10ms mark with wonko
+- They don't seem to affect the 5ms level as much
+
+There are 3 potential reasons for the latency.
+1. The JSON serialization done by the java kafka client library is
+   synchronous. We should look to make this asynchronous, since we
+   might increase the size of the data being serialized, and that
+   shouldn't affect latency.
+2. The java kafka client library uses an internal buffer to queue up
+   records. This implies blocking requests when it gets too many
+   requests.
+3. Fetching hostname and IP address for metadata. While this cost is
+   minimal compared to #1 and #2, it does show up in the profile.
+
+* comparison table
+| stat          | without wonko | with wonko | % slower |
+|---------------+---------------+------------+----------|
+| gb call < 5   |            79 |         67 |   -15.19 |
+| gb call < 10  |            90 |         82 |    -8.89 |
+| gut call < 5  |            53 |         44 |   -16.98 |
+| gut call < 10 |            78 |         71 |    -8.97 |
+| gb sp < 5     |            76 |         73 |    -3.95 |
+| gb sp < 10    |            90 |         88 |    -2.22 |
+| gut sp < 5    |            59 |         53 |   -10.17 |
+| gut sp < 10   |            80 |         76 |    -5.00 |
+#+TBLFM: $4=($3 - $2)*100/$2;%.2f
+
+| stat          | without wonko | with wonko | wonko | % slower |
+|---------------+---------------+------------+-------+----------|
+| gb call < 5   |            79 |         74 |       |    -6.33 |
+| gb call < 10  |            90 |         83 |       |    -7.78 |
+| gut call < 5  |            53 |         65 |       |    22.64 |
+| gut call < 10 |            78 |         77 |       |    -1.28 |
+| gb sp < 5     |            76 |         62 |       |   -18.42 |
+| gb sp < 10    |            90 |         81 |       |   -10.00 |
+| gut sp < 5    |            59 |         39 |       |   -33.90 |
+| gut sp < 10   |            80 |         63 |       |   -21.25 |
+#+TBLFM: $5=($3 - $2)*100/$2;%.2f
+
+* env notes
 - using hog driver ep sessions with po-lift and po-model-lift
 - collecting stats from api-0-perf, since api-1-perf is a small box
 - 25 workers
 - ~ 160 requests per second, but this fatigued to about 120 rps towards the end
+
+* raw stats
 ** stats without wonko
 #+begin_src
 ==================== API COUNTS
@@ -148,6 +189,91 @@ get-user-token-sp
 
                gut-sp-under-10: 76 -------------------------------------- FAIL     [-lt 99]
 #+end_src
+** stats with wonko, and wonko histograms
+==================== HISTOGRAMS
+#+begin_src
+GB
+          0   37710 / 50439    74.76%  74.76%
+         5    4493 / 50439    8.91%  83.67%
+        10    2580 / 50439    5.12%  88.79%
+        15    1642 / 50439    3.26%  92.04%
+        20    1154 / 50439    2.29%  94.33%
+        25     740 / 50439    1.47%  95.80%
+
+                   GB-under-10: 83 -------------------------------------- FAIL     [-lt 97]
+GUT
+          0   32856 / 50322    65.29%  65.29%
+         5    6284 / 50322    12.49%  77.78%
+        10    3912 / 50322    7.77%  85.55%
+        15    2360 / 50322    4.69%  90.24%
+        20    1554 / 50322    3.09%  93.33%
+        25     894 / 50322    1.78%  95.11%
+
+                  GUT-under-10: 77 -------------------------------------- FAIL     [-lt 90]
+GUT-WONKO
+          0   24659 / 25084    98.31%  98.31%
+         5     220 / 25084    0.88%  99.18%
+        10      81 / 25084    0.32%  99.51%
+        15      47 / 25084    0.19%  99.69%
+        20      28 / 25084    0.11%  99.80%
+        25      12 / 25084    0.05%  99.85%
+
+            GUT-WONKO-under-10: 99 --------------------------------------   OK     [-lt 90]
+GB-WONKO
+          0   24458 / 25143    97.28%  97.28%
+         5     331 / 25143    1.32%  98.59%
+        10     160 / 25143    0.64%  99.23%
+        15      78 / 25143    0.31%  99.54%
+        20      40 / 25143    0.16%  99.70%
+        25      31 / 25143    0.12%  99.82%
+
+             GB-WONKO-under-10: 98 --------------------------------------   OK     [-lt 90]
+WONKO
+          0   178417 / 182783    97.61%  97.61%
+         5    1964 / 182783    1.07%  98.69%
+        10     903 / 182783    0.49%  99.18%
+        15     480 / 182783    0.26%  99.44%
+        20     335 / 182783    0.18%  99.63%
+        25     215 / 182783    0.12%  99.74%
+
+                WONKO-under-10: 98 --------------------------------------   OK     [-lt 90]
+
+==================== STORED PROCS
+
+sessions-by-user-token
+          0   44857 / 50440    88.93%  88.93%
+         5    2741 / 50440    5.43%  94.37%
+        10    1235 / 50440    2.45%  96.81%
+        15     654 / 50440    1.30%  98.11%
+        20     327 / 50440    0.65%  98.76%
+        25     201 / 50440    0.40%  99.16%
+
+                 sbut-under-10: 94 -------------------------------------- FAIL     [-lt 99]
+partition-by-id
+
+
+/apps/eccentrica/code/bin/status: line 18: [: too many arguments
+                 pbid-under-10: -lt 99 ----------------------------------     OK
+                            []:
+get-buckets-stored-proc
+          0   15661 / 25123    62.34%  62.34%
+         5    4750 / 25123    18.91%  81.24%
+        10    2154 / 25123    8.57%  89.82%
+        15     991 / 25123    3.94%  93.76%
+        20     537 / 25123    2.14%  95.90%
+        25     263 / 25123    1.05%  96.95%
+
+       gb-stored-proc-under-10: 81 -------------------------------------- FAIL     [-lt 99]
+get-user-token-sp
+          0   10602 / 26769    39.61%  39.61%
+         5    6326 / 26769    23.63%  63.24%
+        10    3629 / 26769    13.56%  76.79%
+        15    2237 / 26769    8.36%  85.15%
+        20    1322 / 26769    4.94%  90.09%
+        25     736 / 26769    2.75%  92.84%
+
+               gut-sp-under-10: 63 -------------------------------------- FAIL     [-lt 99]
+#+end_src
 ** other notes
 #+begin_src
 Exception in thread "Thread-9" java.lang.NullPointerException
@@ -162,20 +288,82 @@ Exception in thread "Thread-9" java.lang.NullPointerException
         at java.lang.Thread.run(Thread.java:745)
 #+end_src
 
+* fixes
+** don't block on buffer full
+- with 10k requests
 
-* comparison table
-| stat          | without wonko | with wonko | % slower |
-|---------------+---------------+------------+----------|
-| gb call < 5   |            79 |         67 |   -15.19 |
-| gb call < 10  |            90 |         82 |    -8.89 |
-| gut call < 5  |            53 |         44 |   -16.98 |
-| gut call < 10 |            78 |         71 |    -8.97 |
-| gb sp < 5     |            76 |         73 |    -3.95 |
-| gb sp < 10    |            90 |         88 |    -2.22 |
-| gut sp < 5    |            59 |         53 |   -10.17 |
-| gut sp < 10   |            80 |         76 |    -5.00 |
-#+TBLFM: $4=($3 - $2)*100/$2;%.2f
+*** "block.on.buffer.full" "true"
+#+begin_src
+         0   32294 / 34843    92.68%  92.68%
+         1     677 / 34843    1.94%  94.63%
+         2     321 / 34843    0.92%  95.55%
+         3     207 / 34843    0.59%  96.14%
+         4     163 / 34843    0.47%  96.61%
+         5     134 / 34843    0.38%  97.00%
+         6     115 / 34843    0.33%  97.33%
+         7      88 / 34843    0.25%  97.58%
+         8      74 / 34843    0.21%  97.79%
+         9      70 / 34843    0.20%  97.99%
+        10      56 / 34843    0.16%  98.15%
+        11      61 / 34843    0.18%  98.33%
+        12      56 / 34843    0.16%  98.49%
+        13      41 / 34843    0.12%  98.61%
+        14      27 / 34843    0.08%  98.68%
+#+end_src
 
-* conclusions
-- EP api calls are about 15% slower at the 10ms mark with wonko
-- They don't seem to affect the 5ms level as much
+*** "block.on.buffer.full" "false"
+#+begin_src
+         0   31825 / 34724    91.65%  91.65%
+         1     718 / 34724    2.07%  93.72%
+         2     321 / 34724    0.92%  94.64%
+         3     234 / 34724    0.67%  95.32%
+         4     185 / 34724    0.53%  95.85%
+         5     128 / 34724    0.37%  96.22%
+         6      93 / 34724    0.27%  96.49%
+         7     112 / 34724    0.32%  96.81%
+         8      96 / 34724    0.28%  97.09%
+         9      68 / 34724    0.20%  97.28%
+        10      73 / 34724    0.21%  97.49%
+        11      78 / 34724    0.22%  97.72%
+        12      63 / 34724    0.18%  97.90%
+        13      65 / 34724    0.19%  98.08%
+        14      41 / 34724    0.12%  98.20%
+#+end_src
+
+*** "block.on.buffer.full" "false", "total.memory.bytes" (* 1024 1024 120)
+#+begin_src
+         0   34436 / 36173    95.20%  95.20%
+         1     534 / 36173    1.48%  96.67%
+         2     257 / 36173    0.71%  97.38%
+         3     139 / 36173    0.38%  97.77%
+         4     129 / 36173    0.36%  98.13%
+         5      77 / 36173    0.21%  98.34%
+         6      80 / 36173    0.22%  98.56%
+         7      68 / 36173    0.19%  98.75%
+         8      58 / 36173    0.16%  98.91%
+         9      36 / 36173    0.10%  99.01%
+        10      36 / 36173    0.10%  99.11%
+        11      35 / 36173    0.10%  99.20%
+        12      27 / 36173    0.07%  99.28%
+        13      28 / 36173    0.08%  99.36%
+        14      23 / 36173    0.06%  99.42%
+#+end_src
+
+*** "block.on.buffer.full" "false", "total.memory.bytes" (* 1024 1024 120), future
+#+begin_src
+         0   34298 / 35206    97.42%  97.42%
+         1     254 / 35206    0.72%  98.14%
+         2     103 / 35206    0.29%  98.43%
+         3      87 / 35206    0.25%  98.68%
+         4      56 / 35206    0.16%  98.84%
+         5      48 / 35206    0.14%  98.98%
+         6      34 / 35206    0.10%  99.07%
+         7      40 / 35206    0.11%  99.19%
+         8      24 / 35206    0.07%  99.26%
+         9      22 / 35206    0.06%  99.32%
+        10      13 / 35206    0.04%  99.36%
+        11      28 / 35206    0.08%  99.43%
+        12      24 / 35206    0.07%  99.50%
+        13      17 / 35206    0.05%  99.55%
+        14      18 / 35206    0.05%  99.60%
+#+end_src
