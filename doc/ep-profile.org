@@ -369,6 +369,7 @@ Exception in thread "Thread-9" java.lang.NullPointerException
 #+end_src
 * fully-async numbers
 ** try 1
+#+begin_src
 ==================== WONKO
 
          0   115482 / 115669    99.84%  99.84%
@@ -410,8 +411,9 @@ GUT
         25      18 / 42269    0.04%  99.72%
 
                   GUT-under-10: 98 --------------------------------------   OK     [-lt 90]
-
+#+end_src
 ** try 2
+#+begin_src
 ==================== WONKO
 
          0   30289 / 33824    89.55%  89.55%
@@ -455,3 +457,4 @@ GUT
        215       4 / 12368    0.03%  99.99%
 
                   GUT-under-10: 99 --------------------------------------   OK     [-lt 90]
+#+end_src
