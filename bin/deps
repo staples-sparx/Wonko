@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DEPS="ant lein kafka zookeeper s3 prometheus wonko_client"
+DEPS="ant lein kafka zookeeper s3 prometheus alertmanager wonko_client"
 
 . ./bin/deps.d/prelude
 
@@ -10,5 +10,6 @@ DEPS="ant lein kafka zookeeper s3 prometheus wonko_client"
 . ./bin/deps.d/kafka
 . ./bin/deps.d/s3
 . ./bin/deps.d/prometheus
+. ./bin/deps.d/alertmanager
 . ./bin/deps.d/wonko_client
 . ./bin/deps.d/epilogue
