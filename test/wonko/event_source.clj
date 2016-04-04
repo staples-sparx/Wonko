@@ -48,15 +48,27 @@
       (client/stream :feed-length {:feed :cogs} (rand-int 1000))
       (client/stream :feed-length {:feed :sku} (rand-int 1000)))))
 
+(defn maybe-do
+  "Calls f percentage times out of 100 times it's called.
+  Used to create realistic scenarios where confirm percentage is
+  about 3% and puchase percentage is about 1%"
+  [percentage f]
+  (when (< (rand-int 100) percentage)
+    (f)))
+
 (defn eccentrica []
   (client/init! "eccentrica" kafka-config)
   (run
     (fn []
       (log/info {:ns :event-source :msg "generating eccentrica events"})
-      (client/counter :get-buckets {:status 200})
-      (client/counter :get-buckets {:status 400})
-      (client/counter :get-user-token {:status 200})
-      (client/counter :get-user-token {:status 400})
-      (client/gauge :get-buckets-exec-time {:status 200} 10)
-      (client/gauge :get-user-token-exec-time {:status 200} 15)
-      (client/counter :no-current-experiment {}))))
+
+      (client/stream :get-user-token {:status 200} (rand-int 10))
+      (maybe-do 10 #(client/stream :get-user-token {:status 400} (rand-int 10)))
+
+      (client/stream :get-buckets {:status 200} (rand-int 10))
+      (maybe-do 10 #(client/stream :get-buckets {:status 400} (rand-int 10)))
+
+      (client/stream :confirm-bucket {:status 200} (rand-int 10))
+      (maybe-do 10 #(client/stream :confirm-bucket {:status 400} (rand-int 10)))
+
+      (maybe-do 1 #(client/alert :no-current-experiment {:exp-name (str "exp-" (rand-int 5))})))))

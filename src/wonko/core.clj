@@ -6,7 +6,6 @@
             [refactor-nrepl.middleware :as refactor-nrepl]
             [wonko.alert :as alert]
             [wonko.config :as config]
-            [wonko.event-source :as event-source]
             [wonko.export.prometheus :as prometheus]
             [wonko.kafka.consume :as consume]
             [wonko.web-server :as web-server]))
