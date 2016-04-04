@@ -11,7 +11,7 @@
 
 (deftest test-streams
   (testing "producing, consuming and exporting streams works"
-    (let [service-name "wonko-test-streams-service"
+    (let [service-name (str (gensym "wonko-test-streams-service"))
           {:keys [events-topic alerts-topic]} (tu/create-topics)
           consumed-events (atom [])
           thread-pool (consume/start {events-topic 1 alerts-topic 1}
@@ -24,13 +24,16 @@
       (client/stream :feed-length {:status :success} 20)
       (tu/wait-for #(= 3 (count @consumed-events)) :interval 1 :timeout 3)
 
-      (is (= (dissoc (first @consumed-events) :metadata)
-             {:service "wonko-test-streams-service"
-              :metric-name "feed-length"
-              :metric-type "stream"
-              :metric-value 0
-              :properties {:status "success"}
-              :options nil}))
+      (is (= 3 (count @consumed-events)))
+
+      (let [first-metric (first (filter #(= 0 (:metric-value %)) @consumed-events))]
+        (is (= (dissoc first-metric :metadata)
+               {:service service-name
+                :metric-name "feed-length"
+                :metric-type "stream"
+                :metric-value 0
+                :properties {:status "success"}
+                :options nil})))
 
       (let [histogram (get-in @prometheus/created-metrics
                               [service-name :stream "feed-length" "histogram"])
