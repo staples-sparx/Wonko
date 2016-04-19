@@ -30,7 +30,9 @@
         (recur)))))
 
 (defn krikkit []
-  (client/init! "krikkit" kafka-config)
+  (client/init! "krikkit" kafka-config
+                :exception-handler (fn [response exception]
+                                     (prn response exception)))
   (run
     (fn []
       (log/info {:ns :event-source :msg "generating krikkit events"})

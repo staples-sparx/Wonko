@@ -25,10 +25,13 @@
   lock (Object.))
 
 (defn get-label-names [properties]
-  (sort (keys properties)))
+  (->> [:host :ip-address]
+       (concat (keys properties))
+       sort))
 
-(defn get-label-values [properties]
-  (map properties (get-label-names properties)))
+(defn get-label-values [metadata properties]
+  (map (merge properties metadata)
+       (get-label-names properties)))
 
 (defn get-or-create-metric [registry {:keys [service metric-name metric-type properties] :as event}]
   (locking registry
@@ -47,11 +50,11 @@
             (swap! created-metrics assoc-in registry-path created-registry)
             created-registry)))))
 
-(defn register-event [{:keys [service metric-value properties] :as event}]
+(defn register-event [{:keys [service metric-value metadata properties] :as event}]
   (try
     (let [registry (get-or-create-registry service)
           metric (get-or-create-metric registry event)
-          label-values (get-label-values properties)]
+          label-values (get-label-values metadata properties)]
       (register/metric metric (assoc event :label-values label-values)))
     (catch Exception e
       (log/info {:msg "unable to register event in prometheus"
