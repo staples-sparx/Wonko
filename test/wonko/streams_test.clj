@@ -48,12 +48,9 @@
                 :options {:bucket-width 5 :bucket-count 20}})))
 
       (let [histogram (get-in @prometheus/created-metrics
-                              [service-name :stream "feed-length" "histogram"])
-            summary (get-in @prometheus/created-metrics
-                            [service-name :stream "feed-length" "summary"])]
+                              [service-name :stream "feed-length" "histogram"])]
 
         (is (boolean histogram))
-        (is (boolean summary))
 
         (testing "histograms"
           (let [res (tu/find-metric-sample histogram "feed_length_histogram_sum")]
@@ -66,20 +63,7 @@
             (is (= (:label-names res) ["host" "ip_address" "status"]))
             (is (= (nth (:label-values res) 2) "success"))
             (is (= (:name res) "feed_length_histogram_count"))
-            (is (= (:value res) 3.0))))
-
-        (testing "summaries"
-          (let [[f s] (tu/metric-samples summary)]
-            (is (= ["host" "ip_address" "status"]
-                   (:label-names f)
-                   (:label-names s)))
-            (is (= "success"
-                   (nth (:label-values f) 2)
-                   (nth (:label-values s) 2)))
-            (is (= (:name f) "feed_length_summary_count"))
-            (is (= (:value f) 3.0))
-            (is (= (:name s) "feed_length_summary_sum"))
-            (is (= (:value s) 30.0)))))
+            (is (= (:value res) 3.0)))))
 
       (consume/stop thread-pool)
       (tu/delete-topics events-topic alerts-topic))))

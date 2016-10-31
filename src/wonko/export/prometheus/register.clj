@@ -29,8 +29,7 @@
       .inc))
 
 (defn- stream [metric label-values metric-value]
-  {c/histogram (histogram (get metric c/histogram) label-values metric-value)
-   c/summary (summary (get metric c/summary) label-values metric-value)})
+  {c/histogram (histogram (get metric c/histogram) label-values metric-value)})
 
 (defn metric [metric {:keys [label-values metric-value metric-type] :as event}]
   (condp = metric-type

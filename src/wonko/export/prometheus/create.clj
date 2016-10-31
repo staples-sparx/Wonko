@@ -55,8 +55,7 @@
                      :width (or (:bucket-width options) 1)
                      :count (or (:bucket-count options) 30)}]
     {c/histogram (histogram registry h-metric-name help-text label-names
-                            bucket-info)
-     c/summary (summary registry s-metric-name help-text label-names)}))
+                            bucket-info)}))
 
 (defn metric
   [registry {:keys [metric-name metric-type label-names options] :as event}]
