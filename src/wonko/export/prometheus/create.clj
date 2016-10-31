@@ -15,40 +15,40 @@
       name
       (s/replace #"[-/ ]" "_")))
 
-(defn maybe-set-label-names [metric label-names]
+(defn- maybe-set-label-names [metric label-names]
   (if (seq label-names)
     (.labelNames metric (into-array (mapv ->prometheus-name label-names)))
     metric))
 
-(defn set-basics [metric metric-name help label-names]
+(defn- set-basics [metric metric-name help label-names]
   (-> metric
       (.name (->prometheus-name metric-name))
       (maybe-set-label-names label-names)
       (.help help)))
 
-(defn counter [registry metric-name help label-names]
+(defn- counter [registry metric-name help label-names]
   (-> (Counter/build)
       (set-basics metric-name help label-names)
       (.register registry)))
 
-(defn gauge [registry metric-name help label-names]
+(defn- gauge [registry metric-name help label-names]
   (-> (Gauge/build)
       (set-basics metric-name help label-names)
       (.register registry)))
 
-(defn summary [registry metric-name help label-names]
+(defn- summary [registry metric-name help label-names]
   (-> (Summary/build)
       (set-basics metric-name help label-names)
       (.register registry)))
 
-(defn histogram [registry metric-name help label-names
+(defn- histogram [registry metric-name help label-names
                  {:keys [start width count] :or {start 0} :as bucket-config}]
   (-> (Histogram/build)
       (set-basics metric-name help label-names)
       (.linearBuckets (double start) (double width) (int count))
       (.register registry)))
 
-(defn stream [registry metric-name help-text label-names]
+(defn- stream [registry metric-name help-text label-names]
   (let [h-metric-name (str metric-name "-" c/histogram)
         s-metric-name (str metric-name "-" c/summary)]
     {c/histogram (histogram registry h-metric-name help-text label-names

@@ -3,32 +3,32 @@
             [wonko.constants :as c])
   (:import [io.prometheus.client Gauge Counter Histogram]))
 
-(defn maybe-set-label-values [metric label-values]
+(defn- maybe-set-label-values [metric label-values]
   (if (seq label-values)
     (.labels metric (into-array (mapv str label-values)))
     metric))
 
-(defn histogram [metric label-values metric-value]
+(defn- histogram [metric label-values metric-value]
   (-> metric
       (maybe-set-label-values label-values)
       (.observe (double metric-value))))
 
-(defn summary [metric label-values metric-value]
+(defn- summary [metric label-values metric-value]
   (-> metric
       (maybe-set-label-values label-values)
       (.observe (double metric-value))))
 
-(defn gauge [metric label-values metric-value]
+(defn- gauge [metric label-values metric-value]
   (-> metric
       (maybe-set-label-values label-values)
       (.set (double metric-value))))
 
-(defn counter [metric label-values]
+(defn- counter [metric label-values]
   (-> metric
       (maybe-set-label-values label-values)
       .inc))
 
-(defn stream [metric label-values metric-value]
+(defn- stream [metric label-values metric-value]
   {c/histogram (histogram (get metric c/histogram) label-values metric-value)
    c/summary (summary (get metric c/summary) label-values metric-value)})
 
