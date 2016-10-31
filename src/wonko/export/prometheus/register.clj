@@ -18,11 +18,6 @@
       (maybe-set-label-values label-values)
       (.observe (double metric-value))))
 
-(defn stream [metric label-values metric-value]
-  (-> metric
-      (maybe-set-label-values label-values)
-      (.observe (double metric-value))))
-
 (defn gauge [metric label-values metric-value]
   (-> metric
       (maybe-set-label-values label-values)
