@@ -19,9 +19,21 @@
                                        (core/process event)
                                        (swap! consumed-events conj event)))]
       (tu/init-client service-name events-topic alerts-topic)
-      (client/stream :feed-length {:status :success} 0)
-      (client/stream :feed-length {:status :success} 10)
-      (client/stream :feed-length {:status :success} 20)
+      (client/stream :feed-length
+                     {:status :success}
+                     0
+                     :bucket-width 5
+                     :bucket-count 20)
+      (client/stream :feed-length
+                     {:status :success}
+                     10
+                     :bucket-width 5
+                     :bucket-count 20)
+      (client/stream :feed-length
+                     {:status :success}
+                     20
+                     :bucket-width 5
+                     :bucket-count 20)
       (tu/wait-for #(= 3 (count @consumed-events)) :interval 1 :timeout 3)
 
       (is (= 3 (count @consumed-events)))
@@ -33,7 +45,7 @@
                 :metric-type "stream"
                 :metric-value 0
                 :properties {:status "success"}
-                :options nil})))
+                :options {:bucket-width 5 :bucket-count 20}})))
 
       (let [histogram (get-in @prometheus/created-metrics
                               [service-name :stream "feed-length" "histogram"])

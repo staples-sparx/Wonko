@@ -48,15 +48,19 @@
       (.linearBuckets (double start) (double width) (int count))
       (.register registry)))
 
-(defn- stream [registry metric-name help-text label-names]
+(defn- stream [registry metric-name help-text label-names options]
   (let [h-metric-name (str metric-name "-" c/histogram)
-        s-metric-name (str metric-name "-" c/summary)]
+        s-metric-name (str metric-name "-" c/summary)
+        bucket-info {:start (or (:bucket-start options) 0)
+                     :width (or (:bucket-width options) 1)
+                     :count (or (:bucket-count options) 30)}]
     {c/histogram (histogram registry h-metric-name help-text label-names
-                            {:width 1 :count 30})
+                            bucket-info)
      c/summary (summary registry s-metric-name help-text label-names)}))
 
-(defn metric [registry {:keys [metric-name metric-type label-names] :as event}]
+(defn metric
+  [registry {:keys [metric-name metric-type label-names options] :as event}]
   (condp = metric-type
     c/counter (counter registry metric-name "help-text" label-names)
     c/gauge (gauge registry metric-name "help-text" label-names)
-    c/stream (stream registry metric-name "help-text" label-names)))
+    c/stream (stream registry metric-name "help-text" label-names options)))
