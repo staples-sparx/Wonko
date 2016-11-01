@@ -15,48 +15,51 @@
       name
       (s/replace #"[-/ ]" "_")))
 
-(defn maybe-set-label-names [metric label-names]
+(defn- maybe-set-label-names [metric label-names]
   (if (seq label-names)
     (.labelNames metric (into-array (mapv ->prometheus-name label-names)))
     metric))
 
-(defn set-basics [metric metric-name help label-names]
+(defn- set-basics [metric metric-name help label-names]
   (-> metric
       (.name (->prometheus-name metric-name))
       (maybe-set-label-names label-names)
       (.help help)))
 
-(defn counter [registry metric-name help label-names]
+(defn- counter [registry metric-name help label-names]
   (-> (Counter/build)
       (set-basics metric-name help label-names)
       (.register registry)))
 
-(defn gauge [registry metric-name help label-names]
+(defn- gauge [registry metric-name help label-names]
   (-> (Gauge/build)
       (set-basics metric-name help label-names)
       (.register registry)))
 
-(defn summary [registry metric-name help label-names]
+(defn- summary [registry metric-name help label-names]
   (-> (Summary/build)
       (set-basics metric-name help label-names)
       (.register registry)))
 
-(defn histogram [registry metric-name help label-names
+(defn- histogram [registry metric-name help label-names
                  {:keys [start width count] :or {start 0} :as bucket-config}]
   (-> (Histogram/build)
       (set-basics metric-name help label-names)
       (.linearBuckets (double start) (double width) (int count))
       (.register registry)))
 
-(defn stream [registry metric-name help-text label-names]
+(defn- stream [registry metric-name help-text label-names options]
   (let [h-metric-name (str metric-name "-" c/histogram)
-        s-metric-name (str metric-name "-" c/summary)]
+        s-metric-name (str metric-name "-" c/summary)
+        bucket-info {:start (or (:bucket-start options) 0)
+                     :width (or (:bucket-width options) 1)
+                     :count (or (:bucket-count options) 30)}]
     {c/histogram (histogram registry h-metric-name help-text label-names
-                            {:width 1 :count 30})
-     c/summary (summary registry s-metric-name help-text label-names)}))
+                            bucket-info)}))
 
-(defn metric [registry {:keys [metric-name metric-type label-names] :as event}]
+(defn metric
+  [registry {:keys [metric-name metric-type label-names options] :as event}]
   (condp = metric-type
     c/counter (counter registry metric-name "help-text" label-names)
     c/gauge (gauge registry metric-name "help-text" label-names)
-    c/stream (stream registry metric-name "help-text" label-names)))
+    c/stream (stream registry metric-name "help-text" label-names options)))
