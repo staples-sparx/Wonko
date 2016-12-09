@@ -1,6 +1,6 @@
 (defproject wonko "0.1.0-SNAPSHOT"
   :local-repo ".m2"
-  :description "SparX Platform and Services monitoring application"
+  :description "Host node and Application monitoring service"
   :url "git@github.com:staples-sparx/Wonko.git"
   :repositories {"runa-maven-s3" {:url "s3p://runa-maven/releases/"
                                   :username [:gpg :env/archiva_username]

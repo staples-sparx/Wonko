@@ -21,9 +21,9 @@
          :topic-streams {"wonko-events" 2
                          "wonko-alerts" 2}}
 
- :pager-duty {:api-endpoint "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
-              :api-keys {"krikkit" "4bbd297e0f7e43cc948f7894b7d8ec7b"
-                         "eccentrica" "4bbd297e0f7e43cc948f7894b7d8ec7b"}}
+ :pager-duty {:api-endpoint "url"
+              :api-keys {"service1" "somesecret1"
+                         "service2" "somesecret2"}}
 
  :alert-thread-pool-size 2
 
