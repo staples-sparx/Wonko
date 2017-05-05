@@ -4,7 +4,7 @@ Monitoring and alerting service for all Staples SparX services.
 
 ## Integration
 
-If you're looking to integrate your service with wonko, see https://github.com/StaplesLabs/wonko-client.
+If you're looking to integrate your service with wonko, see https://github.com/staples-sparx/wonko-client.
 
 ## How does it work?
 
