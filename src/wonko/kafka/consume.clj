@@ -13,7 +13,7 @@
 (defn init! [config]
   (reset! consumer (kc/consumer config)))
 
-(defn parse [msg]
+(defn parse- [msg]
   (let [offset (-> (k/to-clojure msg) :offset)
         message (-> (k/to-clojure msg) :value (#(String. %)))]
     (try
@@ -25,7 +25,7 @@
                    :error-message (.getMessage e)
                    :error-trace (map str (.getStackTrace e))})))))
 
-(defn consume-a-stream [stream process-fn]
+(defn- consume-a-stream [stream process-fn]
   (log/info  {:ns :consume :msg "starting to consume a stream"})
   (let [^ConsumerIterator it (.iterator ^KafkaStream stream)]
     (log/debug {:ns :consume :msg (str "Does the stream have more items? " (.hasNext it))})
@@ -52,6 +52,3 @@
 (defn stop [thread-pool]
   (kc/shutdown @consumer)
   (.shutdownNow thread-pool))
-
-(comment
-  (consume-topics {"krikkit" 2}))

@@ -11,7 +11,7 @@
 ;; or some shared library.                                              ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype Jsonizer []
+(deftype ^:private Jsonizer []
   Serializer
   (configure [_ _ _ ])
   (serialize [_ topic value]
@@ -21,12 +21,12 @@
 (defonce ^Producer producer (atom nil))
 (defonce topic (atom ""))
 
-(defn create-producer [config]
+(defn- create-producer [config]
   (kp/producer config
                (kp/string-serializer)
                (Jsonizer.)))
 
-(defn send-message [message]
+(defn- send-message [message]
   (try
    (let [record (kp/record @topic message)]
      @(kp/send @producer record)
