@@ -13,7 +13,7 @@
 (defn init! [config]
   (reset! consumer (kc/consumer config)))
 
-(defn parse- [msg]
+(defn- parse [msg]
   (let [offset (-> (k/to-clojure msg) :offset)
         message (-> (k/to-clojure msg) :value (#(String. %)))]
     (try
