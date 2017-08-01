@@ -27,8 +27,6 @@
 
  :alert-thread-pool-size 2
 
- :prometheus {:endpoint "localhost:9090"}
-
  :log {:root                     "/var/log/wonko"
        :thread-count             1
        :thread-prefix            "Wonko-Log-"
