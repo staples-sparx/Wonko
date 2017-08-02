@@ -66,7 +66,7 @@ ci-clean:
 tests: download-lein-libs
 	$(LEIN_ENV) $(LEIN) test
 
-deps:
+deps: deps-pull
 	./bin/deps install all
 
 deps-check:
