@@ -6,7 +6,7 @@
                      :replication-factor 1
                      :config {"cleanup.policy" "compact"}}
 
-         :consumer {"zookeeper.connect" "localhost:2182"
+         :consumer {"zookeeper.connect" "zookeeper:2181"
                     "group.id" "clj-kafka.consumer"
                     "auto.offset.reset" "smallest"
 
