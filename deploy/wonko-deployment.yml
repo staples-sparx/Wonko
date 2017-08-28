@@ -1,0 +1,48 @@
+# Basic service configuration file for Wonko
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: wonko
+#namespace to change based on Active profile
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: wonko
+    spec:
+      containers:
+      - args:
+        - "./bin/svc"
+        - "start"
+        - "wonko"
+        name: wonko
+# make sure correct image is listed here
+        image: shishupalkbrgregistry007.azurecr.io/wonko:v3
+        ports:
+        - containerPort: 12000
+# TODO: Add appropriate CPU limits and any other limits
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wonko-service
+  labels:
+    app: wonko
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 12000
+  selector:
+    app: wonko
